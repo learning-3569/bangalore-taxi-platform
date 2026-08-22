@@ -1,0 +1,45 @@
+---
+description: Core working rules for every Cursor Agent session on this repository.
+alwaysApply: true
+---
+
+# Bangalore Taxi Platform — core rules
+
+This is a production product developed **phase by phase**. The current phase is **Phase 0 — Architecture & Project Setup** until documentation says otherwise.
+
+## Before you change architecture or add modules
+
+1. Read `README.md`, `docs/roadmap/development-roadmap.md`, and the relevant files under `docs/architecture/`, `docs/seo/`, `docs/database/`, `docs/api/`, and `docs/decisions/`.
+2. Inspect existing code. Do not rewrite working code without cause.
+3. Modify only files needed for the requested task.
+4. Prefer small, reviewable changes.
+
+## Scope discipline
+
+- Implement **only** the phase or feature that was requested.
+- Do not start the next phase automatically.
+- Do not implement payment, Razorpay, Stripe, refunds, coupons, or invoices unless a future phase explicitly asks. See `docs/decisions/ADR-004-no-payment-v1.md`.
+- Do not add microservices, Kubernetes, Kafka, or a service mesh.
+- Do not add dependencies or abstractions that are not needed yet.
+
+## Architecture
+
+- Modular monolith: one API (`apps/api`), one PostgreSQL database, two frontends.
+- Keep `apps/web` (public, SEO) and `apps/admin` (internal, noindex) **separate**.
+- Keep API controllers thin. Put business rules in services.
+- Validate all API input. Never trust frontend authorization.
+- Never expose or commit secrets. `.env` is not source-controlled.
+
+## SEO
+
+- Public URLs are a business asset. Preserve them.
+- Consider crawl/index impact before changing public routes, metadata, `robots.ts`, or `sitemap.ts`.
+- Do not build thin duplicate SEO pages.
+
+## Quality bar
+
+- Write tests for important business logic.
+- Run relevant builds/tests after implementation.
+- Report files changed, risks, and stop when the requested scope is done.
+- If a business rule is unclear (cancellation, assignment buffers, fare components), ask before inventing it.
+- Do not change accepted ADRs silently; explain the reason first.

@@ -1,0 +1,347 @@
+# Development roadmap
+
+The product is built one phase at a time in this repository. When a phase is requested, implement only that phase. Do not start the next phase automatically.
+
+**Current phase: Phase 0 — Architecture & Project Setup**
+
+Payment is a future phase outside V1.
+
+---
+
+## Phase 0 — Architecture & Project Setup
+
+**Objective:** Establish repository, applications, documentation, Cursor rules, and verified builds.
+
+**Scope:** Next.js web, Next.js admin, ASP.NET Core API skeleton, health endpoint, tests, docs, ADRs, CI.
+
+**Dependencies:** None.
+
+**Backend:** API project, Swagger, `GET /api/health`.
+
+**Frontend:** Foundation layouts, homepage placeholders, robots/sitemap stubs.
+
+**Database:** Documentation only.
+
+**Tests:** Health unit + integration tests.
+
+**Acceptance criteria:** All three apps build; API tests pass; docs and `.cursor/rules` exist; no business features.
+
+**Out of scope:** Auth, bookings, pricing, fleet, notifications, maps, CMS, payment.
+
+---
+
+## Phase 1 — Database Foundation
+
+**Objective:** Connect PostgreSQL with EF Core and a first migration pipeline.
+
+**Scope:** DbContext, connection configuration, initial migration, local runbook. Include only tables required to stand up the context (may be a bootstrap table or the first core entities if specified in the Phase 1 request).
+
+**Dependencies:** Phase 0.
+
+**Backend:** EF Core, Npgsql, design-time factory if needed.
+
+**Frontend:** None required.
+
+**Database:** PostgreSQL instance, migrations, naming conventions.
+
+**Tests:** Migration applies against a test database or equivalent smoke test.
+
+**Acceptance criteria:** `dotnet ef database update` works locally with documented env vars; no secrets in git.
+
+**Out of scope:** Full domain implementation, booking APIs, seed of production content.
+
+---
+
+## Phase 2 — ASP.NET Core Backend Foundation
+
+**Objective:** Shared API kernel: error handling, logging, CORS production config, module folder conventions, ProblemDetails.
+
+**Scope:** Cross-cutting API infrastructure used by later modules.
+
+**Dependencies:** Phase 1.
+
+**Backend:** Pipeline, exception middleware, options pattern.
+
+**Frontend:** Point env URLs only if needed.
+
+**Database:** None unless kernel tables (e.g. audit) are explicitly in scope.
+
+**Tests:** Pipeline tests (unknown route, health).
+
+**Acceptance criteria:** Consistent error shape; Swagger describes health; CORS configurable.
+
+**Out of scope:** Business endpoints.
+
+---
+
+## Phase 3 — Customer Authentication
+
+**Objective:** Customers can register, log in, log out, reset password, and manage a basic profile.
+
+**Scope:** Identity for customers. Admin identity may be stubbed or implemented if required to test; prefer customer-only unless specified.
+
+**Dependencies:** Phase 2.
+
+**Backend:** Auth endpoints, password hashing, session/token issuance.
+
+**Frontend:** Public site account screens only.
+
+**Database:** User/customer tables.
+
+**Tests:** Register/login/reset validation and security cases.
+
+**Acceptance criteria:** Authenticated customer can load their profile; passwords stored hashed; no secrets logged.
+
+**Out of scope:** Bookings, social login, payment.
+
+---
+
+## Phase 4 — SEO-First Public Website
+
+**Objective:** Real marketing pages with metadata, internal linking, sitemap expansion, mobile-first content for core Bangalore intents.
+
+**Scope:** Reserved core routes (taxi, airport, outstation, one-way, round-trip, corporate, about, contact, FAQ, cars). High-quality unique copy. No thin duplicates.
+
+**Dependencies:** Phase 0 frontend foundation. CMS (Phase 11) is not required if content is code-managed first.
+
+**Backend:** Optional read-only content endpoints only if needed; static content is acceptable.
+
+**Frontend:** Public website pages, metadata, sitemap.
+
+**Database:** None unless content is already CMS-backed.
+
+**Tests:** Build-time page generation; smoke that metadata is present.
+
+**Acceptance criteria:** Core routes return 200 HTML with unique title/H1/canonical; robots and sitemap include them; admin still noindex.
+
+**Out of scope:** Full CMS, booking wizard, blog at scale unless specified.
+
+---
+
+## Phase 5 — Booking Engine
+
+**Objective:** Customers submit booking requests; bookings persist with statuses; customers can list upcoming/history and cancel per rules.
+
+**Scope:** Booking entity, create, read, cancel. Admin accept/reject may wait for Phase 7 if specified, but status model should exist.
+
+**Dependencies:** Phases 1–3. Pricing quote may be a stub until Phase 6 (must not hardcode fare logic in the frontend; a temporary server stub is allowed only if Phase 6 is not done).
+
+**Backend:** Bookings module.
+
+**Frontend:** Public booking flow and customer booking lists.
+
+**Database:** Booking tables, indexes, concurrency token.
+
+**Tests:** Create, list, cancel rules, authorization (owner vs other).
+
+**Acceptance criteria:** Request stored as Pending; customer sees their bookings; cannot see others'.
+
+**Out of scope:** Driver assignment, maps, payment, admin desk (unless explicitly included).
+
+---
+
+## Phase 6 — Pricing Engine
+
+**Objective:** Server-side fare estimates from configurable rules.
+
+**Scope:** Base, minimum, per-km, vehicle-specific, airport, toll, waiting, night, one-way, round-trip, outstation.
+
+**Dependencies:** Phase 2. Vehicle types may be enumerated until Phase 8.
+
+**Backend:** Pricing module; quote endpoint.
+
+**Frontend:** Display quote from API only.
+
+**Database:** PricingRule / VehiclePricing.
+
+**Tests:** Deterministic fare cases for each component.
+
+**Acceptance criteria:** Same inputs produce the same fare; frontend contains no fare formulas.
+
+**Out of scope:** Payment, coupons, surge unless requested.
+
+---
+
+## Phase 7 — Admin Portal
+
+**Objective:** Staff can review today's and pending bookings and transition statuses (accept, reject, confirm, cancel).
+
+**Scope:** Dashboard counts, booking detail, status actions. Assignment may be placeholder until Phase 8.
+
+**Dependencies:** Phase 5. Admin authentication required.
+
+**Backend:** Admin booking endpoints; authorization.
+
+**Frontend:** Admin app operational UI.
+
+**Database:** Audit log for admin actions.
+
+**Tests:** Forbidden for customer tokens; happy-path status transitions.
+
+**Acceptance criteria:** Admin can accept/reject a pending booking; public site remains unchanged in URL structure.
+
+**Out of scope:** SEO CMS, full fleet screens (Phase 8).
+
+---
+
+## Phase 8 — Driver & Vehicle Management
+
+**Objective:** Admins manage drivers and vehicles and assign them to bookings without overlap.
+
+**Scope:** CRUD, active flags, assign/change driver and vehicle, double-booking protection.
+
+**Dependencies:** Phases 5 and 7.
+
+**Backend:** Drivers, Vehicles, assignment transaction + conflict error.
+
+**Frontend:** Admin management screens.
+
+**Database:** Exclusion/locking as designed.
+
+**Tests:** Concurrent assignment conflict; overlapping window rejected.
+
+**Acceptance criteria:** Two overlapping assignments for one vehicle cannot both succeed.
+
+**Out of scope:** Driver mobile app.
+
+---
+
+## Phase 9 — Notifications
+
+**Objective:** Send customer and admin messages on booking events.
+
+**Scope:** Abstraction + at least one provider (email or SMS) with config. WhatsApp adapter if credentials exist, otherwise interface + stub.
+
+**Dependencies:** Phase 5+.
+
+**Backend:** Notification module, post-commit dispatch.
+
+**Frontend:** None except copy that messages will be sent.
+
+**Database:** Notification/outbox records as needed.
+
+**Tests:** Event produces the right template intent; failures don't corrupt booking state.
+
+**Acceptance criteria:** Documented events fire; provider isolated behind an interface.
+
+**Out of scope:** Marketing campaigns.
+
+---
+
+## Phase 10 — Google Maps Integration
+
+**Objective:** Autocomplete, coordinates, distance/route for pickup and drop.
+
+**Scope:** `ILocationService` + Google adapter. Keys from environment. Fallback behavior documented.
+
+**Dependencies:** Booking UI (Phase 5).
+
+**Backend:** Maps adapter.
+
+**Frontend:** Public (and admin) address fields use API suggestions.
+
+**Database:** Persist coordinates on bookings (already in model).
+
+**Tests:** Adapter mocked; booking still possible with manual address if provider down (if that is the chosen fallback).
+
+**Acceptance criteria:** No Google keys in git; domain does not depend on SDK types.
+
+**Out of scope:** Live driver tracking.
+
+---
+
+## Phase 11 — SEO CMS & Landing Pages
+
+**Objective:** Business owner publishes SEO pages from admin without code changes.
+
+**Scope:** SeoPage CRUD, publish, slug validation, public renderer, sitemap includes published pages, FAQ structured data.
+
+**Dependencies:** Phases 4 and 7.
+
+**Backend:** SEO module.
+
+**Frontend:** Admin editor; public dynamic/ISR pages.
+
+**Database:** SeoPage tables.
+
+**Tests:** Unpublished 404; slug collision with reserved routes rejected.
+
+**Acceptance criteria:** New published slug appears in HTML and sitemap after revalidation.
+
+**Out of scope:** Thin mass-generated doorway pages.
+
+---
+
+## Phase 12 — Testing & Security Hardening
+
+**Objective:** Raise confidence and close security gaps.
+
+**Scope:** Broader tests, rate limiting, CSP, HTTPS enforcement, review of authz, dependency audit.
+
+**Dependencies:** Features to date.
+
+**Backend/Frontend:** Hardening only.
+
+**Database:** Indexes/constraints review.
+
+**Tests:** Expansion of critical path coverage.
+
+**Acceptance criteria:** Documented checklist signed off in the phase report.
+
+**Out of scope:** New product features.
+
+---
+
+## Phase 13 — Performance Optimization
+
+**Objective:** Improve Core Web Vitals and API latency for booking and SEO pages.
+
+**Scope:** Caching, image/font strategy, query review.
+
+**Dependencies:** Phase 4+ pages exist.
+
+**Acceptance criteria:** Measured improvement on key pages; no SEO regressions (HTML still complete).
+
+**Out of scope:** Premature microservices split.
+
+---
+
+## Phase 14 — Production Deployment
+
+**Objective:** Staging and production environments, HTTPS, backups, logs.
+
+**Scope:** Hosting, PostgreSQL, env config, migrations in deploy, admin restriction.
+
+**Dependencies:** Hardening.
+
+**Acceptance criteria:** Repeatable deploy; secrets in the host; health checks.
+
+**Out of scope:** Kubernetes unless operations explicitly require it.
+
+---
+
+## Phase 15 — SEO Launch & Monitoring
+
+**Objective:** Search Console, analytics, sitemap submission, local SEO consistency, monitoring.
+
+**Scope:** Operational SEO launch, not ranking guarantees.
+
+**Dependencies:** Production public site.
+
+**Acceptance criteria:** Sitemap submitted; monitoring in place; no accidental admin indexing.
+
+**Out of scope:** Buying links or spam tactics.
+
+---
+
+## Future phase — Online Payment
+
+**Objective:** Collect payment only if the client requests it.
+
+**Scope:** TBD (provider, capture timing, refunds). New ADR required.
+
+**Dependencies:** Stable bookings.
+
+**Out of scope for V1:** All payment code, tables, webhooks, UI.
+
+See [ADR-004](../decisions/ADR-004-no-payment-v1.md).

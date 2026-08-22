@@ -1,0 +1,25 @@
+---
+description: Phase boundaries and forbidden V1 payment work.
+alwaysApply: true
+---
+
+# Phase and payment rules
+
+When the user says “Implement Phase N”, implement **only** Phase N as specified in `docs/roadmap/development-roadmap.md`.
+
+Before implementing:
+
+1. Read this file and `.cursor/rules/00-core.mdc`.
+2. Read architecture docs for the area you will touch.
+3. Inspect the current code.
+4. State the approach briefly, then implement.
+
+After implementing:
+
+1. Run relevant tests/builds.
+2. Report changed files and risks.
+3. Stop. Do not begin Phase N+1.
+
+## Never in V1 (unless a later explicit payment phase)
+
+Payment module, payment service, payment controller, payment tables, Razorpay, Stripe, payment UI, payment webhooks, refunds, coupons, invoices, payment status fields.

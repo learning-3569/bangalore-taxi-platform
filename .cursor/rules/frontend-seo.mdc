@@ -1,0 +1,16 @@
+---
+description: Public website vs admin portal and SEO constraints.
+globs: apps/web/**/*,apps/admin/**/*
+alwaysApply: false
+---
+
+# Frontend conventions
+
+- `apps/web` is SEO-first (SSR/SSG, metadata, canonical, crawlable HTML).
+- `apps/admin` is internal: keep `noindex` and `robots` disallow.
+- Do not merge the two apps.
+- Do not hardcode fare calculations in the browser.
+- Do not implement booking, auth, or CMS screens unless the current phase asks.
+- Never change a published public path without a redirect plan and sitemap update.
+- Prefer server-rendered copy on marketing pages; avoid client-only primary content.
+- After UI changes: `npm run build` (and `lint`) in the app you changed.

@@ -1,0 +1,51 @@
+# See https://help.github.com/articles/ignoring-files/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+!**/.env.example
+secrets/
+credentials/
+*.pem
+
+# Node
+node_modules/
+.pnp
+.pnp.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+.vercel
+*.tsbuildinfo
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+project.lock.json
+artifacts/
+
+# Build output
+build/
+dist/
+coverage/
+TestResults/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vs/
+*.swp
+
+# Logs
+*.log

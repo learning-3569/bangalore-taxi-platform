@@ -1,0 +1,17 @@
+---
+description: Modular monolith backend conventions for the ASP.NET Core API.
+globs: apps/api/**/*.cs,tests/**/*.cs
+alwaysApply: false
+---
+
+# Backend conventions
+
+- Organize new code by business capability (Bookings, Pricing, Customers, …) when that phase starts. Do not create empty module folders early.
+- Do not apply the Repository pattern by default; use EF Core directly unless an abstraction earns its keep.
+- Controllers: HTTP and DTO mapping only.
+- Return ProblemDetails for errors.
+- Enforce authorization on the server.
+- Pricing logic belongs in the API, never in a frontend.
+- Assignment of vehicles must be transactional and safe under concurrency (see `docs/database/database-design.md`).
+- No payment namespace, controllers, or EF entities.
+- After API changes: `dotnet test BangaloreTaxi.sln`.

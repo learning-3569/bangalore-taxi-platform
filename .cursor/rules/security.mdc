@@ -1,0 +1,15 @@
+---
+description: Security and secrets handling.
+alwaysApply: true
+---
+
+# Security
+
+- Never commit `.env`, credentials, API keys, or connection strings with passwords.
+- Never hardcode secrets in source.
+- Validate input at the API. Authorize on the API.
+- Hash passwords with a proven hasher when auth is implemented.
+- Use EF Core parameterization; no string-concatenated SQL.
+- CORS allowlists from configuration.
+- Do not log tokens, OTPs, or passwords.
+- Admin capabilities must not leak into public routes or sitemaps.

@@ -25,16 +25,11 @@ Rendering:
 
 Do not default to a purely client-rendered SPA. Search-friendly HTML must be present in the first response.
 
-Phase 0 ships:
+Phase 3 ships the marketing homepage, header/footer, UI-only booking widget, legal URL placeholders, metadata helpers, JSON-LD (without fake NAP/ratings), `robots.ts`, and a sitemap of real public paths only. See [public website UI](public-website-ui.md).
 
-- Root layout with `metadataBase`, title template, Open Graph, `lang="en-IN"`
-- Homepage foundation copy (not the full marketing site)
-- `robots.ts` allowing crawl
-- `sitemap.ts` listing the homepage only
+Phase 4 adds `src/app/[slug]/page.tsx` for published route landers (`generateStaticParams`, `dynamicParams = false`). Content lives in `src/content/seo/`. Do not mass-generate locality pages.
 
-Do not create the full SEO route set in Phase 0 (`/bangalore-taxi`, airport pages, city-pair pages, blog). Those belong to Phase 4 and Phase 11.
-
-Suggested later App Router layout (not created yet):
+Suggested later App Router layout:
 
 ```text
 src/app/
@@ -42,17 +37,19 @@ src/app/
   page.tsx
   robots.ts
   sitemap.ts
-  about/
+  [slug]/             # published SEO landers (routes now; CMS later)
+  privacy-policy/
+  terms-and-conditions/
+  about/              # reserved
   contact/
   faq/
   cars/
   blog/
-  [seoSlug]/          # CMS-driven landing pages, collision-safe
   account/            # authenticated customer area
   book/               # booking wizard
 ```
 
-Customer authentication and booking UI are out of scope until Phases 3 and 5.
+Customer authentication and booking APIs remain out of scope until explicitly requested. The homepage booking widget does not submit to the API.
 
 ## Admin portal (`apps/admin`)
 

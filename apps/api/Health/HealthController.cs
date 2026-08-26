@@ -6,6 +6,16 @@ namespace BangaloreTaxi.Api.Health;
 [Route("api/health")]
 public sealed class HealthController : ControllerBase
 {
+    private readonly TimeProvider _timeProvider;
+
+    public HealthController(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
+
+    /// <summary>
+    /// Service identity for operators. Database readiness is <c>GET /health/ready</c>.
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(HealthResponse), StatusCodes.Status200OK)]
     public ActionResult<HealthResponse> Get()
@@ -13,8 +23,8 @@ public sealed class HealthController : ControllerBase
         return Ok(new HealthResponse(
             Status: "ok",
             Service: "BangaloreTaxi.Api",
-            Phase: "0",
-            UtcNow: DateTimeOffset.UtcNow));
+            Phase: "2",
+            UtcNow: _timeProvider.GetUtcNow()));
     }
 }
 

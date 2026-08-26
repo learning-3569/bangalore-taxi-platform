@@ -2,7 +2,7 @@
 
 Advance taxi booking for a Bangalore fleet of about 20 cars. Customers discover the service through Google search, request trips in advance, and receive confirmation with driver details after an administrator accepts the request and assigns a vehicle.
 
-**Current Phase: Phase 0 — Architecture & Project Setup**
+**Current Phase: Phase 4B — Scalable route catalog foundation (complete)**
 
 This repository is a production product developed incrementally. Do not implement later phases unless explicitly requested.
 
@@ -23,7 +23,7 @@ V1 does **not** include online payment. Payment is a future phase only if the cl
 | Public website | Next.js 15 (App Router), TypeScript, Tailwind CSS |
 | Admin portal | Next.js 15 (App Router), TypeScript, Tailwind CSS — separate app |
 | Backend | ASP.NET Core 8 Web API, C# |
-| Database | PostgreSQL (schema begins in Phase 1) |
+| Database | PostgreSQL 16+ (EF Core schema in Phase 1) |
 | API docs | OpenAPI / Swagger |
 | Tests | xUnit + `Microsoft.AspNetCore.Mvc.Testing` |
 
@@ -55,11 +55,12 @@ scripts/          Local helper scripts
 
 | Phase | Name |
 | --- | --- |
-| 0 | Architecture & Project Setup (current) |
+| 0 | Architecture & Project Setup |
 | 1 | Database Foundation |
 | 2 | ASP.NET Core Backend Foundation |
-| 3 | Customer Authentication |
-| 4 | SEO-First Public Website |
+| 3 | Public website UI/UX + SEO foundation (complete) |
+| 4 | SEO route & location page foundation (complete) |
+| 4B | Scalable route catalog foundation (complete) |
 | 5 | Booking Engine |
 | 6 | Pricing Engine |
 | 7 | Admin Portal |
@@ -82,7 +83,7 @@ Prerequisites:
 - Node.js 22+
 - npm 10+
 - .NET SDK 8 (see `global.json`)
-- PostgreSQL 16+ is required from Phase 1 onward; Phase 0 does not need a running database
+- PostgreSQL 16+ (Docker Compose: `docker compose up -d` or `scripts/dev-postgres.sh`)
 
 Copy environment templates (names only; no secrets):
 
@@ -104,6 +105,13 @@ Restore .NET tools from the repository root:
 
 ```bash
 dotnet restore
+dotnet tool restore
+```
+
+Apply the database (after PostgreSQL is running; see [docs/database/local-setup.md](docs/database/local-setup.md)):
+
+```bash
+dotnet ef database update --project apps/api/BangaloreTaxi.Api.csproj --startup-project apps/api/BangaloreTaxi.Api.csproj
 ```
 
 ## How to run each application
@@ -115,7 +123,9 @@ Default local ports (uncommon on purpose):
 | Public website | http://127.0.0.1:43121 |
 | Admin portal | http://127.0.0.1:43122 |
 | API (Swagger in Development) | http://127.0.0.1:43130/swagger |
-| API health | http://127.0.0.1:43130/api/health |
+| API health (live) | http://127.0.0.1:43130/health/live |
+| API health (ready, PostgreSQL) | http://127.0.0.1:43130/health/ready |
+| API identity | http://127.0.0.1:43130/api/health |
 
 ```bash
 # Public website
@@ -128,7 +138,7 @@ cd apps/admin && npm run dev
 cd apps/api && dotnet run --launch-profile http
 ```
 
-Helper scripts: `scripts/dev-web.sh`, `scripts/dev-admin.sh`, `scripts/dev-api.sh`.
+Helper scripts: `scripts/dev-web.sh`, `scripts/dev-admin.sh`, `scripts/dev-api.sh`, `scripts/dev-postgres.sh`.
 
 Verify Phase 0 builds and tests:
 
@@ -157,19 +167,34 @@ SEO is a core product requirement, not a later add-on. The public site must rema
 
 HTTPS in production, role-based authorization on the server, parameterized data access, secret management outside source control, CORS limited to known origins, audit logging for operational actions. Details: [docs/architecture/security-architecture.md](docs/architecture/security-architecture.md).
 
-## What Phase 0 includes
+## What Phase 4 includes
 
-- Repository layout
-- Initialized web, admin, and API applications
-- Health endpoint and foundation tests
-- Architecture documentation and ADRs
-- Cursor Agent rules
-- CI workflow
+Six high-quality route landers (airport + reverse airport + outstation), typed SEO content model, reusable `RouteLandingPage`, sitemap of published slugs only, breadcrumbs and conservative JSON-LD. No mass-generated locality pages. Details: [SEO architecture](docs/seo/seo-architecture.md).
 
-## What Phase 0 does not include
+## What Phase 3 includes
 
-Customer auth, bookings, pricing, drivers, vehicles, admin operations, notifications, Google Maps, SEO CMS, or any payment capability.
+Public site (`apps/web`): mobile-first homepage, design tokens, header/footer, UI-only booking form, SEO metadata, robots, sitemap of real URLs, conservative JSON-LD. Details: [public website UI](docs/architecture/public-website-ui.md).
+
+## What Phase 2 includes
+
+- HTTP kernel: Problem Details, exception mapping, CORS, security headers, rate limiting, structured request logs with `traceId`
+- Liveness/readiness health checks against PostgreSQL
+- OpenAPI/Swagger in Development
+- Options pattern for operations, CORS, and rate limits
+- Pipeline and PostgreSQL-ready integration tests
+
+```bash
+docker compose up -d
+dotnet ef database update --project apps/api/BangaloreTaxi.Api.csproj --startup-project apps/api/BangaloreTaxi.Api.csproj
+cd apps/api && dotnet run --launch-profile http
+```
+
+Then open http://127.0.0.1:43130/health/live and http://127.0.0.1:43130/swagger
+
+## What Phase 2 does not include
+
+Customer auth, booking/pricing/fleet APIs, notifications, Maps, SEO CMS, payment, or frontend work.
 
 ## Next recommended phase
 
-**Phase 1 — Database Foundation**
+Await an explicit request. Do **not** start customer authentication, the booking engine, admin, or payment automatically.

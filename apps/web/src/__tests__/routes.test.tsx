@@ -1,0 +1,220 @@
+import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { RouteLandingPage } from "@/components/routes/RouteLandingPage";
+import { ServiceLandingPage } from "@/components/routes/ServiceLandingPage";
+import { breadcrumbJsonLd, faqJsonLd, serviceJsonLd } from "@/components/seo/JsonLd";
+import { popularRoutes } from "@/config/site";
+import {
+  getIndexableRoutes,
+  getPublishedRoute,
+  getPublishedRoutes,
+  getRelatedRoutes,
+  getReverseRoute,
+  getRouteBySlug,
+  getRoutesFromLocation,
+  getRoutesToLocation,
+  getServicePage,
+  isReservedSlug,
+  locations,
+  routePages,
+  servicePages,
+} from "@/content/seo/catalog";
+import { validateSeoCatalog } from "@/content/seo/validate";
+import { isImplementedPublicPath } from "@/lib/paths";
+import { createPageMetadata } from "@/lib/seo";
+import sitemap from "@/app/sitemap";
+
+describe("route catalog", () => {
+  it("publishes demonstration routes and keeps drafts unpublished", () => {
+    expect(getIndexableRoutes()).toHaveLength(6);
+    expect(getPublishedRoutes().some((page) => page.slug === "review-only-demo-route")).toBe(true);
+    expect(getIndexableRoutes().some((page) => page.slug === "review-only-demo-route")).toBe(false);
+    expect(getPublishedRoute("unpublished-demo-route")).toBeUndefined();
+    expect(getRouteBySlug("unpublished-demo-route")?.published).toBe(false);
+  });
+
+  it("only links related routes that are published and indexable from customer pages", () => {
+    for (const page of getIndexableRoutes()) {
+      const related = getRelatedRoutes(page);
+      expect(related.length).toBeGreaterThan(0);
+      for (const item of related) {
+        expect(item.published).toBe(true);
+        expect(item.indexable).toBe(true);
+        expect(isImplementedPublicPath(`/${item.slug}`)).toBe(true);
+      }
+    }
+  });
+
+  it("resolves a reverse route when both directions are published", () => {
+    const outbound = getPublishedRoute("whitefield-to-bangalore-airport-taxi")!;
+    const reverse = getReverseRoute(outbound);
+    expect(reverse?.slug).toBe("bangalore-airport-to-whitefield-taxi");
+    expect(getRoutesFromLocation("whitefield").some((page) => page.slug === outbound.slug)).toBe(true);
+    expect(getRoutesToLocation("blr-airport").length).toBeGreaterThan(0);
+  });
+
+  it("gives every indexable page a unique H1 and metadata pair", () => {
+    const h1s = getIndexableRoutes().map((page) => page.h1);
+    const titles = getIndexableRoutes().map((page) => page.seoTitle);
+    expect(new Set(h1s).size).toBe(h1s.length);
+    expect(new Set(titles).size).toBe(titles.length);
+  });
+
+  it("does not invent fares or numeric travel times in the summary", () => {
+    for (const page of getIndexableRoutes()) {
+      expect(page.farePlaceholder.toLowerCase()).toContain("request");
+      expect(page.summary.durationNote.toLowerCase()).toMatch(/traffic|condition/);
+      expect(page.summary.distanceNote).not.toMatch(/\d+\s*km/i);
+      expect(page.summary.durationNote).not.toMatch(/\d+\s*(min|hour|hr)/i);
+    }
+  });
+});
+
+describe("catalog validation", () => {
+  it("accepts the live catalog", () => {
+    expect(validateSeoCatalog({ locations, routes: routePages, services: servicePages })).toEqual([]);
+  });
+
+  it("detects duplicate slugs, unknown locations, and reserved collisions", () => {
+    const sample = getIndexableRoutes()[0];
+    const duplicate = validateSeoCatalog({
+      locations,
+      services: servicePages,
+      routes: [sample, { ...sample }],
+    });
+    expect(duplicate.some((error) => error.includes("Duplicate slug"))).toBe(true);
+
+    const unknown = validateSeoCatalog({
+      locations,
+      services: servicePages,
+      routes: [{ ...sample, originId: "not-a-place", slug: "unique-unknown-origin" }],
+    });
+    expect(unknown.some((error) => error.includes("unknown origin"))).toBe(true);
+
+    const reserved = validateSeoCatalog({
+      locations,
+      services: servicePages,
+      routes: [{ ...sample, slug: "airport-taxi-bangalore" }],
+    });
+    expect(reserved.some((error) => error.includes("reserved"))).toBe(true);
+  });
+
+  it("protects reserved public slugs from the dynamic route table", () => {
+    expect(isReservedSlug("airport-taxi-bangalore")).toBe(true);
+    expect(isReservedSlug("outstation-taxi-bangalore")).toBe(true);
+    expect(isReservedSlug("privacy-policy")).toBe(true);
+    expect(getIndexableRoutes().every((page) => !isReservedSlug(page.slug))).toBe(true);
+  });
+});
+
+describe("route landing pages", () => {
+  it("renders unique H1, breadcrumbs, booking prefill, and FAQ for outbound Whitefield", () => {
+    const route = getPublishedRoute("whitefield-to-bangalore-airport-taxi");
+    expect(route).toBeDefined();
+    render(<RouteLandingPage route={route!} />);
+    expect(screen.getByRole("heading", { level: 1, name: route!.h1 })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Airport taxi" })).toHaveAttribute("href", "/airport-taxi-bangalore");
+    expect(screen.getByDisplayValue("Whitefield")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Bangalore Airport")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /bangalore airport → whitefield/i })).toBeInTheDocument();
+    expect(screen.getByText(/can i book a whitefield to airport taxi in advance/i)).toBeInTheDocument();
+  });
+
+  it("renders inbound airport copy that is not a reversed outbound page", () => {
+    const outbound = getPublishedRoute("whitefield-to-bangalore-airport-taxi")!;
+    const inbound = getPublishedRoute("bangalore-airport-to-whitefield-taxi")!;
+    render(<RouteLandingPage route={inbound} />);
+    expect(screen.getByRole("heading", { level: 1, name: inbound.h1 })).toBeInTheDocument();
+    expect(inbound.intro).not.toBe(outbound.intro);
+    expect(inbound.pickupInformation.body).not.toBe(outbound.pickupInformation.body);
+    expect(screen.getByText(/arrivals are a different job/i)).toBeInTheDocument();
+  });
+
+  it("renders an outstation lander with round-trip context", () => {
+    const route = getPublishedRoute("bangalore-to-mysore-taxi")!;
+    render(<RouteLandingPage route={route} />);
+    expect(screen.getByRole("heading", { level: 1, name: route.h1 })).toBeInTheDocument();
+    expect(screen.getByText(/one-way versus round-trip/i)).toBeInTheDocument();
+  });
+});
+
+describe("parent service pages", () => {
+  it("renders airport and outstation service landers with unique H1s and route links", () => {
+    const airport = getServicePage("airport-taxi-bangalore");
+    const outstation = getServicePage("outstation-taxi-bangalore");
+    const { unmount } = render(<ServiceLandingPage service={airport} />);
+    expect(screen.getByRole("heading", { level: 1, name: airport.h1 })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /whitefield → bangalore airport/i })).toBeInTheDocument();
+    unmount();
+    render(<ServiceLandingPage service={outstation} />);
+    expect(screen.getByRole("heading", { level: 1, name: outstation.h1 })).toBeInTheDocument();
+    expect(outstation.h1).not.toBe(airport.h1);
+    expect(screen.getByRole("link", { name: /bangalore → mysore/i })).toBeInTheDocument();
+  });
+});
+
+describe("route metadata and sitemap", () => {
+  it("creates self-canonical metadata and respects noindex", () => {
+    const indexed = createPageMetadata({
+      title: "Whitefield to Bangalore Airport Taxi",
+      description: "Advance taxi from Whitefield.",
+      path: "/whitefield-to-bangalore-airport-taxi",
+    });
+    expect(indexed.alternates?.canonical).toBe("/whitefield-to-bangalore-airport-taxi");
+    const hidden = createPageMetadata({
+      title: "Review only",
+      description: "Not for Google.",
+      path: "/review-only-demo-route",
+      indexable: false,
+    });
+    expect(hidden.robots).toEqual({ index: false, follow: false });
+  });
+
+  it("includes indexable routes and services and excludes drafts and noindex", () => {
+    const urls = sitemap().map((entry) => entry.url);
+    expect(urls.some((url) => url.includes("/whitefield-to-bangalore-airport-taxi"))).toBe(true);
+    expect(urls.some((url) => url.includes("/airport-taxi-bangalore"))).toBe(true);
+    expect(urls.some((url) => url.includes("/outstation-taxi-bangalore"))).toBe(true);
+    expect(urls.some((url) => url.includes("/unpublished-demo-route"))).toBe(false);
+    expect(urls.some((url) => url.includes("/review-only-demo-route"))).toBe(false);
+    expect(urls).toHaveLength(3 + getIndexableRoutes().length + 2);
+  });
+
+  it("emits parseable BreadcrumbList, Service, and FAQ JSON-LD without ratings", () => {
+    const route = getIndexableRoutes()[0];
+    const blobs = [
+      breadcrumbJsonLd([
+        { name: "Home", path: "/" },
+        { name: "Airport taxi", path: "/airport-taxi-bangalore" },
+        { name: route.h1, path: `/${route.slug}` },
+      ]),
+      serviceJsonLd({
+        name: route.h1,
+        description: route.metaDescription,
+        path: `/${route.slug}`,
+        serviceType: "Airport taxi",
+      }),
+      faqJsonLd(route.faq),
+    ].map((data) => JSON.stringify(data));
+    for (const blob of blobs) {
+      expect(() => JSON.parse(blob)).not.toThrow();
+      expect(blob).not.toMatch(/AggregateRating|reviewRating|"price"/);
+    }
+  });
+});
+
+describe("homepage route links", () => {
+  it("only links popular routes that exist", () => {
+    for (const route of popularRoutes) {
+      if ("href" in route && route.href) {
+        expect(isImplementedPublicPath(route.href), route.href).toBe(true);
+      }
+    }
+  });
+
+  it("does not expose unpublished catalog slugs as public paths", () => {
+    expect(isImplementedPublicPath("/unpublished-demo-route")).toBe(false);
+    expect(routePages.some((page) => page.slug === "unpublished-demo-route")).toBe(true);
+  });
+});

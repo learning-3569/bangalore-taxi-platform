@@ -2,7 +2,9 @@
 
 The product is built one phase at a time in this repository. When a phase is requested, implement only that phase. Do not start the next phase automatically.
 
-**Current phase: Phase 0 — Architecture & Project Setup**
+**Current phase: Phase 4B — Scalable route catalog foundation (complete)**
+
+The numbered roadmap below still lists “Phase 3 — Customer Authentication” as originally planned. That work is **deferred**. Do not start booking, OTP, admin, or payment automatically.
 
 Payment is a future phase outside V1.
 
@@ -34,7 +36,7 @@ Payment is a future phase outside V1.
 
 **Objective:** Connect PostgreSQL with EF Core and a first migration pipeline.
 
-**Scope:** DbContext, connection configuration, initial migration, local runbook. Include only tables required to stand up the context (may be a bootstrap table or the first core entities if specified in the Phase 1 request).
+**Scope:** DbContext, connection configuration, full approved schema, first migration, local runbook, lookup seed data. No booking APIs.
 
 **Dependencies:** Phase 0.
 
@@ -74,6 +76,22 @@ Payment is a future phase outside V1.
 
 ---
 
+## Phase 3 — Public website UI/UX + SEO foundation (implemented)
+
+**Objective:** Customer-facing homepage, temporary design system, and crawlable SEO plumbing. No auth, no booking API, no payment, no admin, no Maps.
+
+**Scope:** `apps/web` homepage sections, header/footer, UI-only booking widget, legal placeholders, metadata, robots, sitemap of real paths, conservative JSON-LD.
+
+**Dependencies:** Phase 0 frontend foundation.
+
+**Acceptance criteria:** Homepage and navigation work on mobile; production build and web tests pass; no fabricated NAP, reviews, or thin SEO URLs.
+
+**Out of scope:** OTP/login, `POST /api/v1/bookings`, payment, admin portal, driver apps, SMS/WhatsApp, Google Maps.
+
+The original “Phase 3 — Customer Authentication” section below is **not** the current workstream.
+
+---
+
 ## Phase 3 — Customer Authentication
 
 **Objective:** Customers can register, log in, log out, reset password, and manage a basic profile.
@@ -93,6 +111,30 @@ Payment is a future phase outside V1.
 **Acceptance criteria:** Authenticated customer can load their profile; passwords stored hashed; no secrets logged.
 
 **Out of scope:** Bookings, social login, payment.
+
+---
+
+## Phase 4 — SEO route & location page foundation (implemented)
+
+**Objective:** High-quality, crawlable route landers with a reusable template and a typed content model. No thin mass generation.
+
+**Scope:** Six demonstration route pages, metadata/canonicals, breadcrumbs, related-route linking, sitemap of published slugs, FAQ/Service JSON-LD without fake NAP/prices. Location-page types exist; no `/taxi-service-*` URLs published.
+
+**Dependencies:** Phase 3 public website.
+
+**Acceptance criteria:** Unique title/H1/canonical per published route; unpublished drafts stay out of the sitemap; homepage popular routes link only to real pages; web tests, lint, and production build pass.
+
+**Out of scope:** OTP, booking APIs, pricing engine, Maps, SEO CMS, Category E locality pages, combinatorial route generation.
+
+---
+
+## Phase 4B — Scalable route catalog foundation (implemented)
+
+**Objective:** Location + route catalogs that can grow via CMS without a React file per corridor, without auto-combining localities.
+
+**Scope:** Typed `LocationContent`, `originId`/`destinationId` on routes, `published` vs `indexable`, catalog registry helpers, related-route fallback, reserved-slug validation, parent pages `/airport-taxi-bangalore` and `/outstation-taxi-bangalore`. No PostgreSQL SEO tables.
+
+**Future SEO growth (not done):** SEO CMS → location management → route management → content authoring → review → publish → index → sitemap → Search Console monitoring.
 
 ---
 

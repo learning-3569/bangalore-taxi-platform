@@ -2,70 +2,162 @@
 
 ## Application
 
-`apps/api` is an ASP.NET Core 8 Web API (`BangaloreTaxi.Api`). It is a modular monolith: one process, one solution, modules by business capability.
+`apps/api` is an ASP.NET Core 8 Web API (`BangaloreTaxi.Api`). It is a modular monolith: one process, one PostgreSQL database, one deployable API. See [ADR-001](../decisions/ADR-001-modular-monolith.md).
 
-OpenAPI/Swagger is enabled in Development (`/swagger`).
+Phase 2 provides the HTTP kernel. Business modules are not implemented yet. There is no Payment module in V1 ([ADR-004](../decisions/ADR-004-no-payment-v1.md)).
 
-Phase 0 exposes only `GET /api/health`.
+OpenAPI/Swagger is enabled in Development at `/swagger`.
 
-## Organization
+## Why a single project
 
-When a module is implemented, prefer this shape inside the API project (or a dedicated project only if a later ADR says so):
+Phase 0 placed the API in `apps/api` with tests in `tests/unit` and `tests/integration`. Phase 2 **keeps that layout**. Separate Domain/Application/Infrastructure class libraries are not required yet: they would add project ceremony without extra modules to isolate.
+
+Conceptual layers live as folders inside `BangaloreTaxi.Api`:
+
+```text
+apps/api/
+  Program.cs                 Host
+  Application/               Exceptions used by services (no ASP.NET types)
+  Configuration/             Options (CORS, operations, rate limits)
+  Hosting/                   Pipeline, DI, errors, health, security headers
+  Health/                    GET /api/health identity payload
+  Persistence/               EF Core, PostgreSQL, migrations (infrastructure)
+```
+
+Future capability folders (`Bookings/`, `Customers/`, …) are added **when that phase is implemented**, not as empty shells.
 
 ```text
 Bookings/
   Controllers/
   Services/
   DTOs/
-  Models/
   Validators/
 ```
 
-Do not create empty module folders before the phase that needs them.
+### Dependency direction
 
-Do not apply the Repository pattern everywhere. EF Core `DbContext` is already an abstraction. Add repositories only when they hide a real querying complexity or enable a test seam that is otherwise painful.
+```text
+Hosting / Controllers  →  Application  →  (future domain services)
+Hosting / Persistence  →  PostgreSQL
+```
 
-Controllers stay thin: parse HTTP, call a service, map errors to problem details. Domain and application rules live in services.
+Controllers stay thin. Do not put business rules in `Program.cs` or controllers. EF Core `DbContext` is the persistence abstraction; do not add a generic repository layer.
+
+Domain concepts must not take a dependency on HTTP or vendor SDKs. Persistence entities currently sit in `Persistence/Entities` because they are EF-mapped. If a later phase needs persistence-free domain types, extract them then.
 
 ## Future modules
 
-Authentication, Customers, Bookings, Pricing, Drivers, Vehicles, Notifications, SEO, Administration.
+Identity, Customers, Bookings, Drivers, Vehicles, Pricing, Notifications, SEO, Administration.
 
-There is no Payment module in V1. Do not add payment controllers, services, or tables. See [ADR-004](../decisions/ADR-004-no-payment-v1.md).
+Payment is a future phase only.
 
-## API conventions
+## Health
 
-Documented in [API design](../api/api-design.md). Summary:
+| Endpoint | Meaning | Database |
+| --- | --- | --- |
+| `GET /health/live` | Process is up (liveness) | No |
+| `GET /health/ready` | Ready to take traffic (readiness) | Yes — PostgreSQL `CanConnect` |
+| `GET /health` | Same as readiness | Yes |
+| `GET /api/health` | Service identity (name, phase, UTC now) | No |
 
-- REST, JSON, `/api/{resource}`
-- Validation on every write
-- ProblemDetails for errors
-- Server-side authorization; ignore client-supplied roles
-- Idempotent assignment operations where practical
+Ready/live responses are JSON `{ status, checks[] }` with **no** connection strings or exception text.
 
-## Persistence
+Kubernetes is not used. The split exists so a load balancer or future orchestrator can probe liveness without failing when the database is briefly unavailable.
 
-EF Core + PostgreSQL from Phase 1. Migrations are the source of schema truth. The API owns transactions for booking assignment so double-booking cannot occur from a race. Details: [database design](../database/database-design.md).
+The API does **not** run migrations on startup. Apply schema with `dotnet ef database update`.
 
-## Integrations
+## Configuration
 
-Maps and notifications are consumed through interfaces owned by the API. Vendor SDKs stay in adapter classes. Configuration via environment variables.
+| File | Role |
+| --- | --- |
+| `appsettings.json` | Non-secret defaults (operations, rate limit) |
+| `appsettings.Development.json` | Local CORS + local connection string |
+| `appsettings.Staging.json` | Staging CORS empty until env is set |
+| `appsettings.Testing.json` | Test CORS origins |
+| Environment / `.env` | Secrets and production connection string |
+
+`ConnectionStrings:DefaultConnection` is required in Staging/Production. Development and Testing may fall back to the documented local Docker credentials.
+
+`TimeProvider` is registered as a singleton (`TimeProvider.System`). System timestamps are UTC. Booking local time stays on `pickup_at` / `pickup_time_zone` (Phase 1).
+
+`IHttpClientFactory` is registered. Named clients for Maps, WhatsApp, SMS, email, and payment are added when those phases exist. Do not register fake providers.
+
+### DI lifetimes
+
+| Lifetime | Use |
+| --- | --- |
+| Singleton | `TimeProvider`, stateless helpers |
+| Scoped | `BangaloreTaxiDbContext`, future request services |
+| Transient | Lightweight stateless helpers with no shared state |
+
+Do not resolve scoped services from singletons. Do not use a service locator.
+
+## Errors
+
+`IExceptionHandler` + RFC 7807 Problem Details. Production never returns stack traces, connection strings, or SQL text.
+
+| Situation | Status |
+| --- | --- |
+| Validation (`ApiController` model state) | 400 |
+| PostgreSQL foreign key / check | 400 |
+| Missing resource (`NotFoundException`) | 404 |
+| Unique or exclusion violation; `ConflictException` | 409 |
+| Rate limit | 429 |
+| Unhandled | 500 |
+
+`traceId` is `HttpContext.TraceIdentifier` (and Activity when present). Log the same id with the exception. Do not log passwords, tokens, OTPs, or connection strings.
+
+Success bodies remain the resource JSON (no wrapper). HTTP status codes carry the outcome.
+
+## Validation
+
+`[ApiController]` + DataAnnotations on future DTOs. Invalid model state returns Problem Details with `errors`. Do not bind EF entities to controllers. FluentValidation is not added; add it later only if DataAnnotations are insufficient.
+
+## Transactions and concurrency
+
+No global per-request transaction. Future booking/assignment services open an explicit EF transaction for the write set, use `SELECT … FOR UPDATE` as designed in Phase 1, and map exclusion/unique failures to 409. The UI is not the concurrency guard.
+
+## Logging
+
+Built-in `ILogger`. Each request logs method, path, status, and trace id — **not** query strings or bodies (those may contain PII or tokens).
+
+## CORS
+
+Policy `FrontendApps`. Origins from `Cors:AllowedOrigins`. Never `AllowAnyOrigin` with credentials. Development: `http://127.0.0.1:43121` and `http://127.0.0.1:43122` (and localhost aliases). Production/staging origins come from environment configuration.
+
+## Security headers
+
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`. CSP is relaxed in Development (Swagger) and `default-src 'none'` otherwise. Broader CSP/HSTS at the edge can be tightened in Phase 12.
+
+## HTTPS
+
+Local Development: HTTP on `127.0.0.1:43130`. Production: `UseHsts` + `UseHttpsRedirection`; terminate TLS at the host. No certificates in this repo.
+
+## Authentication / authorization / audit
+
+Not implemented. Phase 3 will add authentication. Role names already exist in the database (`customer`, `admin`, `driver`). Do not add fake JWT middleware.
+
+Audit rows should be written in application services after successful admin mutations (accept, assign, pricing change, SEO publish) — not as a blanket EF interceptor.
+
+## Rate limiting
+
+Built-in `AddRateLimiter`. Global fixed window per IP (default 120/minute). Named policies `auth` (10/min) and `public-write` (30/min) are registered for Phase 3/5 endpoints via `[EnableRateLimiting("auth")]`. Health checks disable rate limiting. Phase 12 can add finer policies.
+
+## Request size
+
+Kestrel `MaxRequestBodySize` = 1 MiB.
+
+## API versioning
+
+Business routes will use `/api/v1/{resource}` by convention. No versioning NuGet package. A `/api/v2` prefix is added only if a breaking public contract appears. Health stays unversioned (`/health`, `/api/health`).
 
 ## Testing
 
 | Project | Role |
 | --- | --- |
-| `tests/unit` | Pure unit tests of domain/application logic |
-| `tests/integration` | HTTP pipeline tests via `WebApplicationFactory` |
+| `tests/unit` | Exception mapping, formatters, contracts |
+| `tests/integration` | Pipeline, PostgreSQL schema, `/health/ready` |
 
-Phase 0: health contract unit test + health endpoint integration test.
-
-Write tests for important business logic as soon as that logic exists (pricing, assignment, cancellation rules). Do not add a second test framework.
-
-## Configuration
-
-- `appsettings.json` — non-secret defaults
-- `appsettings.Development.json` — local CORS origins
-- Environment variables / `.env` (not committed) — secrets and connection strings
+Schema and ready checks use `bangalore_taxi_test` (or `SCHEMA_TEST_CONNECTION` in CI), never `EnsureDeleted` on `bangalore_taxi`. Do not use EF InMemory for PostgreSQL behavior.
 
 `TreatWarningsAsErrors` is enabled on API and test projects.

@@ -1,13 +1,17 @@
 import type { MetadataRoute } from "next";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:43121";
+import { getSiteUrl, isPublicIndexable } from "@/config/site";
 
 export default function robots(): MetadataRoute.Robots {
+  const siteUrl = getSiteUrl();
+  if (!isPublicIndexable()) {
+    return {
+      rules: [{ userAgent: "*", disallow: "/" }],
+      sitemap: `${siteUrl}/sitemap.xml`,
+      host: siteUrl,
+    };
+  }
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
+    rules: [{ userAgent: "*", allow: "/" }],
     sitemap: `${siteUrl}/sitemap.xml`,
     host: siteUrl,
   };

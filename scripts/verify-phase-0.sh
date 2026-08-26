@@ -10,3 +10,5 @@ echo "==> Building admin portal"
 
 echo "==> Building and testing API"
 (cd "$root" && dotnet test BangaloreTaxi.sln --nologo)
+
+echo "==> Phase 1 schema tests need Docker (Testcontainers)."

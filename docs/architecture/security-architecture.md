@@ -1,6 +1,6 @@
 # Security architecture
 
-The platform will store customer names, phone numbers, addresses, and trip history. Treat that as personal data. Phase 0 does not implement authentication; this document binds later phases.
+The platform will store customer names, phone numbers, addresses, and trip history. Treat that as personal data. Authentication is Phase 3; this document binds later phases.
 
 ## Principles
 
@@ -33,7 +33,7 @@ The platform will store customer names, phone numbers, addresses, and trip histo
 ## HTTPS
 
 - Production: TLS only. Redirect HTTP to HTTPS at the edge.
-- Local Phase 0 API runs HTTP on `127.0.0.1:43130` for simplicity.
+- Local Development API runs HTTP on `127.0.0.1:43130`. Production enables HSTS and HTTPS redirection; certificates live on the host, not in git.
 
 ## CORS
 
@@ -58,8 +58,13 @@ If cookie-based auth is chosen, use antiforgery tokens or SameSite strategies do
 
 ## Rate limiting
 
-- Phase 12: throttle booking creation, login, and password reset.
-- Protect public forms from abuse.
+- Foundation: global per-IP fixed window (see backend architecture). Named `auth` and `public-write` policies are registered for later endpoints.
+- Phase 12 can tighten login, booking create, and password reset further.
+
+## Security headers
+
+- API sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and a conservative CSP (Swagger-friendly in Development).
+- Content-Security-Policy for the public website remains a Phase 12 concern for `apps/web`.
 
 ## Configuration and secrets
 
@@ -71,13 +76,14 @@ If cookie-based auth is chosen, use antiforgery tokens or SameSite strategies do
 
 - Record admin actions on bookings: accept, reject, assign, cancel, status change.
 - Record authentication failures at a safe detail level (no passwords).
-- `AuditLog` table is specified in database design and created in a later phase.
+- `AuditLog` table exists (Phase 1). Write rows from application services after successful admin mutations. Do not intercept every EF change.
 
 ## Error handling
 
 - Do not leak stack traces to clients in production.
 - Use ProblemDetails.
-- Log internally with correlation IDs.
+- Log internally with `traceId` (`HttpContext.TraceIdentifier`).
+- PostgreSQL unique/exclusion violations map to 409, not 500.
 
 ## Admin isolation
 

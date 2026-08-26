@@ -15,3 +15,4 @@ alwaysApply: false
 - Assignment of vehicles must be transactional and safe under concurrency (see `docs/database/database-design.md`).
 - No payment namespace, controllers, or EF entities.
 - After API changes: `dotnet test BangaloreTaxi.sln`.
+- Cross-cutting pipeline code lives in `Hosting/`. Business modules get their own folders only when that phase starts.

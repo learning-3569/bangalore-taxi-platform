@@ -1,42 +1,52 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
+import { Footer } from "@/components/layout/Footer";
+import { Header } from "@/components/layout/Header";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { getSiteUrl, isPublicIndexable, siteConfig } from "@/config/site";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const poppins = Poppins({
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
 });
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:43121";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(getSiteUrl()),
   title: {
-    default: "Bangalore Taxi | Airport, Outstation and Local Cab Booking",
-    template: "%s | Bangalore Taxi",
+    default: siteConfig.defaultTitle,
+    template: siteConfig.titleTemplate,
   },
-  description:
-    "Book taxis in Bangalore for airport transfers, outstation trips, and local travel. Advance booking for a 20-car Bangalore fleet.",
+  description: siteConfig.description,
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_IN",
-    siteName: "Bangalore Taxi",
-    title: "Bangalore Taxi | Airport, Outstation and Local Cab Booking",
-    description:
-      "Book taxis in Bangalore for airport transfers, outstation trips, and local travel.",
+    siteName: siteConfig.name,
+    title: siteConfig.defaultTitle,
+    description: siteConfig.description,
     url: "/",
+    images: [{ url: "/images/hero-airport.jpg", alt: "Bangalore airport taxi" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.defaultTitle,
+    description: siteConfig.description,
+    images: ["/images/hero-airport.jpg"],
   },
   robots: {
-    index: true,
-    follow: true,
+    index: isPublicIndexable(),
+    follow: isPublicIndexable(),
   },
 };
 
@@ -47,10 +57,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en-IN">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-stone-50 text-stone-900 antialiased`}
-      >
+      <body className={`${inter.variable} ${poppins.variable} bg-paper font-sans text-ink antialiased`}>
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
+        <Header />
         {children}
+        <Footer />
+        <WhatsAppButton />
       </body>
     </html>
   );

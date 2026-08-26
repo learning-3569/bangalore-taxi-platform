@@ -27,6 +27,6 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
         Assert.NotNull(payload);
         Assert.Equal("ok", payload.Status);
         Assert.Equal("BangaloreTaxi.Api", payload.Service);
-        Assert.Equal("0", payload.Phase);
+        Assert.Equal("2", payload.Phase);
     }
 }

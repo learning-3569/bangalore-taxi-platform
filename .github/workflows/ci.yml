@@ -21,6 +21,7 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm test
       - run: npm run build
 
   admin:
@@ -43,6 +44,22 @@ jobs:
   api:
     name: API and tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bangalore_taxi
+          POSTGRES_PASSWORD: dev
+          POSTGRES_DB: bangalore_taxi_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bangalore_taxi -d bangalore_taxi_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SCHEMA_TEST_CONNECTION: Host=localhost;Port=5432;Database=bangalore_taxi_test;Username=bangalore_taxi;Password=dev
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

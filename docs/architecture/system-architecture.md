@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 0 — architecture and project foundation only. No business modules are implemented.
+Phase 3 — Public website homepage, design system, and SEO foundation. API remains the Phase 2 HTTP kernel (no booking or auth endpoints).
 
 ## Context
 

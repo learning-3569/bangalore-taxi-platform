@@ -19,6 +19,7 @@ type AuthContextValue = {
   verifyOtp: (phoneNumber: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
   peekDevOtp: (phoneNumber: string) => Promise<string | null>;
+  authenticatedFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -62,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(payload.user ?? null);
   }, []);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<string | null> => {
     try {
       const response = await fetch("/api/auth/refresh", {
         method: "POST",
@@ -71,12 +72,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) {
         setUser(null);
         setAccessToken(null);
-        return;
+        return null;
       }
-      applySession((await response.json()) as { accessToken?: string; user?: AuthUser });
+      const payload = (await response.json()) as { accessToken?: string; user?: AuthUser };
+      applySession(payload);
+      return payload.accessToken ?? null;
     } catch {
       setUser(null);
       setAccessToken(null);
+      return null;
     }
   }, [applySession]);
 
@@ -139,9 +143,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data.otp ?? null;
   }, []);
 
+  const authenticatedFetch = useCallback(async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    let token = accessToken;
+    if (!token) token = await refresh();
+    const send = (value: string | null) => fetch(input, {
+      ...init,
+      headers: { ...(init.headers ?? {}), ...(value ? { Authorization: `Bearer ${value}` } : {}) },
+    });
+    let response = await send(token);
+    if (response.status === 401) response = await send(await refresh());
+    return response;
+  }, [accessToken, refresh]);
+
   const value = useMemo(
-    () => ({ user, accessToken, ready, requestOtp, verifyOtp, logout, peekDevOtp }),
-    [user, accessToken, ready, requestOtp, verifyOtp, logout, peekDevOtp],
+    () => ({ user, accessToken, ready, requestOtp, verifyOtp, logout, peekDevOtp, authenticatedFetch }),
+    [user, accessToken, ready, requestOtp, verifyOtp, logout, peekDevOtp, authenticatedFetch],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

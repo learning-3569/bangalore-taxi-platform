@@ -1,13 +1,15 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { FormEvent, Suspense, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { SelectField, TextField } from "@/components/ui/Fields";
 import { tripTypes, vehicleTypes } from "@/config/site";
 import type { TripTypeValue } from "@/content/seo/types";
 import { loginHref } from "@/lib/booking-intent";
+import { problemMessage, type Booking } from "@/lib/bookings";
 
 type BookingWidgetProps = {
   defaultPickup?: string;
@@ -18,7 +20,11 @@ type BookingWidgetProps = {
   idPrefix?: string;
 };
 
-export function BookingWidget({
+export function BookingWidget(props: BookingWidgetProps) {
+  return <Suspense fallback={<div className="border border-line bg-paper p-5 text-sm text-ink-muted">Loading booking form…</div>}><BookingWidgetContent {...props} /></Suspense>;
+}
+
+function BookingWidgetContent({
   defaultPickup,
   defaultDrop,
   defaultTripType = "airport",
@@ -26,14 +32,25 @@ export function BookingWidget({
   submitLabel = "Book now",
   idPrefix = "",
 }: BookingWidgetProps) {
-  const { user } = useAuth();
+  const { user, authenticatedFetch } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [trip, setTrip] = useState<TripTypeValue>(defaultTripType);
-  const [submitted, setSubmitted] = useState(false);
+  const search = useSearchParams();
+  const restoredTrip = search.get("tripType") as TripTypeValue | null;
+  const initialTrip = restoredTrip && tripTypes.some(x => x.value === restoredTrip) ? restoredTrip : defaultTripType;
+  const [trip, setTrip] = useState<TripTypeValue>(initialTrip);
+  const [drop, setDrop] = useState(
+    initialTrip === "airport" && !defaultDrop
+      ? "Kempegowda International Airport Bengaluru"
+      : search.get("drop") ?? defaultDrop ?? "",
+  );
+  const [created, setCreated] = useState<Booking | null>(null);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submitLock = useRef(false);
   const minDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     if (!user) {
@@ -43,11 +60,31 @@ export function BookingWidget({
           pickup: String(form.get("pickup") ?? ""),
           drop: String(form.get("drop") ?? ""),
           tripType: trip,
+          travelDate: String(form.get("travelDate") ?? ""),
+          pickupTime: String(form.get("pickupTime") ?? ""),
+          vehicleType: String(form.get("vehicleType") ?? ""),
         }),
       );
       return;
     }
-    setSubmitted(true);
+    if (submitLock.current) return;
+    submitLock.current = true;
+    setSubmitting(true);
+    setError("");
+    try {
+      const response = await authenticatedFetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({
+          pickup: form.get("pickup"), drop: form.get("drop"), tripType: trip,
+          travelDate: form.get("travelDate"), pickupTime: form.get("pickupTime"), vehicleType: form.get("vehicleType"),
+        }),
+      });
+      if (!response.ok) throw new Error(await problemMessage(response));
+      setCreated(await response.json() as Booking);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not create the booking request.");
+    } finally { submitLock.current = false; setSubmitting(false); }
   }
 
   return (
@@ -79,7 +116,14 @@ export function BookingWidget({
               className={`px-2 py-2 text-xs font-semibold uppercase tracking-wide transition sm:text-[11px] ${
                 active ? "bg-navy text-white" : "text-ink-muted hover:text-navy"
               }`}
-              onClick={() => setTrip(option.value)}
+              onClick={() => {
+                setTrip(option.value);
+                if (option.value === "airport" && !defaultDrop) {
+                  setDrop("Kempegowda International Airport Bengaluru");
+                } else if (drop === "Kempegowda International Airport Bengaluru") {
+                  setDrop(defaultDrop ?? "");
+                }
+              }}
             >
               {option.label}
             </button>
@@ -96,7 +140,7 @@ export function BookingWidget({
           placeholder="Enter pickup location"
           autoComplete="street-address"
           required
-          defaultValue={defaultPickup}
+          defaultValue={search.get("pickup") ?? defaultPickup}
         />
         <TextField
           id={`${idPrefix}drop`}
@@ -105,11 +149,14 @@ export function BookingWidget({
           placeholder="Enter destination"
           autoComplete="street-address"
           required
-          defaultValue={defaultDrop}
+          value={drop}
+          readOnly={trip === "airport" && !defaultDrop}
+          aria-readonly={trip === "airport" && !defaultDrop}
+          onChange={(event) => setDrop(event.target.value)}
         />
-        <TextField id={`${idPrefix}date`} name="date" label="Travel date" type="date" min={minDate} required />
-        <TextField id={`${idPrefix}time`} name="time" label="Pickup time" type="time" required />
-        <SelectField id={`${idPrefix}vehicleType`} name="vehicleType" label="Vehicle type" required defaultValue="sedan">
+        <TextField id={`${idPrefix}date`} name="travelDate" label="Travel date" type="date" min={minDate} required defaultValue={search.get("travelDate") ?? undefined} />
+        <TextField id={`${idPrefix}time`} name="pickupTime" label="Pickup time" type="time" required defaultValue={search.get("pickupTime") ?? undefined} />
+        <SelectField id={`${idPrefix}vehicleType`} name="vehicleType" label="Vehicle type" required defaultValue={search.get("vehicleType") ?? "sedan"}>
           {vehicleTypes.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -118,17 +165,20 @@ export function BookingWidget({
         </SelectField>
       </div>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button type="submit" variant="taxi" className="uppercase sm:min-w-40">
-          {submitLabel}
+        <Button type="submit" variant="taxi" className="uppercase sm:min-w-40" disabled={submitting} aria-busy={submitting}>
+          {submitting ? "Submitting…" : submitLabel}
         </Button>
         <p className="text-xs text-ink-muted">
           We use these details only to process your trip request.
         </p>
       </div>
-      {submitted ? (
+      {error ? <p role="alert" className="mt-3 text-sm text-red-700">{error}</p> : null}
+      {created ? (
         <div role="status" className="mt-3 text-sm text-navy">
           <p className="font-semibold">Booking request received</p>
-          <p className="mt-1 text-ink-muted">Pending confirmation. Our team will review availability and confirm your trip.</p>
+          <p className="mt-1"><span className="text-ink-muted">Booking number:</span> {created.bookingNumber}</p>
+          <p><span className="text-ink-muted">Status:</span> Pending confirmation</p>
+          <Link href="/account/bookings" className="mt-2 inline-block font-semibold underline">View my bookings</Link>
         </div>
       ) : null}
     </form>

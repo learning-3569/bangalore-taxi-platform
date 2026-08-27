@@ -49,6 +49,9 @@ describe("header account logout", () => {
     expect(screen.getByRole("link", { name: /^book a cab$/i })).toBeInTheDocument();
 
     await user.click(account);
+    const myBookings = await screen.findByRole("menuitem", { name: /my bookings/i });
+    expect(myBookings).toHaveAttribute("href", "/account/bookings");
+    expect(screen.getByRole("menuitem", { name: /logout/i })).toBeInTheDocument();
     const logout = await screen.findByRole("menuitem", { name: /logout/i });
     await user.click(logout);
 
@@ -87,7 +90,7 @@ describe("header account logout", () => {
 });
 
 describe("unauthenticated header", () => {
-  it("does not show Account or Logout", () => {
+  it("does not show authenticated account actions", () => {
     render(
       <AuthProvider>
         <Header />
@@ -95,6 +98,7 @@ describe("unauthenticated header", () => {
     );
     expect(screen.queryByRole("button", { name: /account/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: /logout/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /my bookings/i })).not.toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^book a cab$/i })).toBeInTheDocument();
   });
@@ -114,7 +118,7 @@ describe("header mobile logout", () => {
     );
   });
 
-  it("exposes Logout inside the mobile menu", async () => {
+  it("exposes My Bookings and Logout inside the mobile account menu", async () => {
     const user = userEvent.setup();
     render(
       <AuthProvider>
@@ -126,6 +130,19 @@ describe("header mobile logout", () => {
     const mobile = screen.getByRole("navigation", { name: "Mobile" });
     expect(within(mobile).getByRole("button", { name: /account/i })).toBeInTheDocument();
     await user.click(within(mobile).getByRole("button", { name: /account/i }));
+    expect(within(mobile).getByRole("menuitem", { name: /my bookings/i })).toHaveAttribute("href", "/account/bookings");
     expect(within(mobile).getByRole("menuitem", { name: /logout/i })).toBeInTheDocument();
+  });
+
+  it("closes the mobile navigation after choosing My Bookings", async () => {
+    const user = userEvent.setup();
+    render(<AuthProvider><Header /></AuthProvider>);
+    await screen.findByRole("button", { name: /account/i });
+    await user.click(screen.getByRole("button", { name: /open menu/i }));
+    const mobile = screen.getByRole("navigation", { name: "Mobile" });
+    await user.click(within(mobile).getByRole("button", { name: /account/i }));
+    await user.click(within(mobile).getByRole("menuitem", { name: /my bookings/i }));
+    expect(screen.queryByRole("navigation", { name: "Mobile" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /open menu/i })).toHaveFocus();
   });
 });

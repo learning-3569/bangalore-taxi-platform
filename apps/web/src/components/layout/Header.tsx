@@ -133,7 +133,7 @@ export function Header() {
             {ready && user ? (
               <div className="mt-2 border-t border-line pt-3">
                 <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Account</p>
-                <AccountMenu compact />
+                <AccountMenu compact onNavigate={closeMenu} />
               </div>
             ) : null}
             <Button href={bookHref} variant="taxi" className="mt-2 uppercase" onClick={closeMenu}>

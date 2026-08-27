@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 
-export function AccountMenu({ compact = false }: { compact?: boolean }) {
+export function AccountMenu({ compact = false, onNavigate }: { compact?: boolean; onNavigate?: () => void }) {
   const { logout } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -72,6 +73,19 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
           aria-label="Account"
           className={`z-50 min-w-44 border border-line bg-paper py-1 shadow-[0_12px_28px_rgba(8,24,39,0.12)] ${compact ? "relative mt-2 w-full" : "absolute right-0 mt-2"}`}
         >
+          <li role="none">
+            <Link
+              href="/account/bookings"
+              role="menuitem"
+              className="flex w-full px-3 py-2 text-left text-sm font-medium text-navy hover:bg-paper-soft focus-visible:bg-paper-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+              onClick={() => {
+                setOpen(false);
+                onNavigate?.();
+              }}
+            >
+              My Bookings
+            </Link>
+          </li>
           <li role="none">
             <button
               type="button"

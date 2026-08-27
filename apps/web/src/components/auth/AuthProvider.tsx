@@ -28,18 +28,25 @@ function csrfToken(): string {
   return match ? decodeURIComponent(match[1]) : "";
 }
 
-async function readProblem(response: Response): Promise<{ message: string; retryAfterSeconds: number | null; status: number }> {
+async function readProblem(response: Response): Promise<{
+  message: string;
+  retryAfterSeconds: number | null;
+  phoneCooldown: boolean;
+  status: number;
+}> {
   try {
     const data = (await response.json()) as { detail?: string; title?: string; retryAfterSeconds?: unknown };
     return {
       message: data.detail ?? data.title ?? "Something went wrong.",
       retryAfterSeconds: parseRetryAfterSeconds(response, data),
+      phoneCooldown: typeof data.retryAfterSeconds === "number" && data.retryAfterSeconds > 0,
       status: response.status,
     };
   } catch {
     return {
       message: "Something went wrong.",
       retryAfterSeconds: parseRetryAfterSeconds(response, {}),
+      phoneCooldown: false,
       status: response.status,
     };
   }
@@ -85,8 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (!response.ok) {
       const problem = await readProblem(response);
-      if (response.status === 429 && problem.retryAfterSeconds) {
+      if (response.status === 429 && problem.phoneCooldown && problem.retryAfterSeconds) {
         throw new OtpCooldownError(problem.retryAfterSeconds);
+      }
+      if (response.status === 429) {
+        throw new Error("Too many verification requests. Please try again later.");
       }
       throw new Error(problem.message);
     }

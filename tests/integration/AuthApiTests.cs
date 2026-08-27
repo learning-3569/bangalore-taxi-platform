@@ -188,6 +188,72 @@ public sealed class AuthApiTests
         Assert.Equal(HttpStatusCode.Unauthorized, expired.StatusCode);
     }
 
+    [SkippableFact]
+    public async Task Resend_cooldown_is_phone_specific_and_survives_logout()
+    {
+        RequireDatabase();
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add(AuthController.BearerClientHeader, AuthController.BearerClientValue);
+        var phoneA = UniquePhone();
+        var phoneB = UniquePhone();
+
+        var firstA = await client.PostAsJsonAsync("/api/v1/auth/otp/request", new { phoneNumber = phoneA });
+        firstA.EnsureSuccessStatusCode();
+        var secondA = await client.PostAsJsonAsync("/api/v1/auth/otp/request", new { phoneNumber = phoneA });
+        await AssertPhoneCooldownAsync(secondA);
+
+        var firstB = await client.PostAsJsonAsync("/api/v1/auth/otp/request", new { phoneNumber = phoneB });
+        firstB.EnsureSuccessStatusCode();
+        await AssertPhoneCooldownAsync(await client.PostAsJsonAsync("/api/v1/auth/otp/request", new { phoneNumber = phoneA }));
+
+        var verify = await client.PostAsJsonAsync(
+            "/api/v1/auth/otp/verify",
+            new { phoneNumber = phoneA, otp = Peek(factory, phoneA) });
+        verify.EnsureSuccessStatusCode();
+        var session = await verify.Content.ReadFromJsonAsync<AuthTokenResponse>(_json);
+        var logout = await client.PostAsJsonAsync("/api/v1/auth/logout", new { refreshToken = session!.RefreshToken });
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+
+        await AssertPhoneCooldownAsync(await client.PostAsJsonAsync("/api/v1/auth/otp/request", new { phoneNumber = phoneA }));
+    }
+
+    [SkippableFact]
+    public async Task Auth_ip_rate_limit_blocks_abuse_across_different_phones()
+    {
+        RequireDatabase();
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        for (var i = 0; i < 10; i++)
+        {
+            var response = await client.PostAsJsonAsync("/api/v1/auth/otp/request", new { phoneNumber = UniquePhone() });
+            response.EnsureSuccessStatusCode();
+        }
+
+        var blocked = await client.PostAsJsonAsync("/api/v1/auth/otp/request", new { phoneNumber = UniquePhone() });
+        Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
+        var body = await blocked.Content.ReadAsStringAsync();
+        Assert.Contains("Too many verification requests. Please try again later.", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("otpHash", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("challengeId", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("refreshToken", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(blocked.Headers.RetryAfter);
+    }
+
+    private static async Task AssertPhoneCooldownAsync(HttpResponseMessage response)
+    {
+        Assert.Equal(HttpStatusCode.TooManyRequests, response.StatusCode);
+        Assert.NotNull(response.Headers.RetryAfter?.Delta);
+        Assert.True(response.Headers.RetryAfter.Delta.Value.TotalSeconds >= 1);
+        var body = await response.Content.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(body);
+        Assert.True(json.RootElement.GetProperty("retryAfterSeconds").GetInt32() >= 1);
+        Assert.DoesNotContain("otpHash", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("challengeId", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("refreshToken", body, StringComparison.OrdinalIgnoreCase);
+    }
+
     private WebApplicationFactory<Program> CreateFactory(string? expirySeconds = null)
     {
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>

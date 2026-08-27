@@ -118,6 +118,51 @@ describe("OTP form", () => {
     );
   });
 
+  it("keeps a phone cooldown scoped to the phone that produced it", async () => {
+    requestOtp
+      .mockRejectedValueOnce(new OtpCooldownError(60))
+      .mockResolvedValueOnce({ resendAvailableInSeconds: 60 })
+      .mockRejectedValueOnce(new OtpCooldownError(59));
+    const user = userEvent.setup();
+    render(<OtpAuthForm />);
+    const phone = screen.getByLabelText(/mobile number/i);
+
+    await user.type(phone, "9876543210");
+    await user.click(screen.getByRole("button", { name: /send otp/i }));
+    expect(await screen.findByRole("status")).toHaveTextContent(/in 60 seconds/i);
+
+    await user.clear(phone);
+    await user.type(phone, "9123456789");
+    expect(screen.queryByText(/you can request another code/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^send otp$/i })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: /^send otp$/i }));
+    expect(await screen.findByLabelText(/one-time code/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /change number/i }));
+    const changedPhone = screen.getByLabelText(/mobile number/i);
+    await user.clear(changedPhone);
+    await user.type(changedPhone, "9876543210");
+    await user.click(screen.getByRole("button", { name: /^send otp$/i }));
+    expect(await screen.findByRole("status")).toHaveTextContent(/in 59 seconds/i);
+    expect(requestOtp).toHaveBeenNthCalledWith(1, "9876543210");
+    expect(requestOtp).toHaveBeenNthCalledWith(2, "9123456789");
+    expect(requestOtp).toHaveBeenNthCalledWith(3, "9876543210");
+  });
+
+  it("shows a generic IP abuse response without starting a phone countdown", async () => {
+    requestOtp.mockRejectedValueOnce(new Error("Too many verification requests. Please try again later."));
+    const user = userEvent.setup();
+    render(<OtpAuthForm />);
+    await user.type(screen.getByLabelText(/mobile number/i), "9876543210");
+    await user.click(screen.getByRole("button", { name: /send otp/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Too many verification requests. Please try again later.",
+    );
+    expect(screen.queryByText(/you can request another code/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^send otp$/i })).toBeEnabled();
+  });
+
   it("shows expired OTP errors", async () => {
     verifyOtp.mockRejectedValueOnce(new Error("Unable to verify the code."));
     const user = userEvent.setup();

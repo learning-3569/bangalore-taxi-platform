@@ -178,7 +178,7 @@ public static class ServiceCollectionExtensions
                     {
                         Status = StatusCodes.Status429TooManyRequests,
                         Title = "Too Many Requests",
-                        Detail = "Rate limit exceeded. Retry later.",
+                        Detail = "Too many verification requests. Please try again later.",
                         Type = "https://httpstatuses.io/429"
                     },
                     cancellationToken);

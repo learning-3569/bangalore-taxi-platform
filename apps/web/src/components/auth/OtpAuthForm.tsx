@@ -24,6 +24,7 @@ export function OtpAuthForm() {
   const [loading, setLoading] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [cooldownBlocked, setCooldownBlocked] = useState(false);
+  const [cooldownPhone, setCooldownPhone] = useState("");
   const [devOtp, setDevOtp] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,6 +62,7 @@ export function OtpAuthForm() {
       const result = await auth.requestOtp(phone);
       setSeconds(result.resendAvailableInSeconds ?? 60);
       setCooldownBlocked(false);
+      setCooldownPhone(phone);
       setError("");
       setStep("otp");
       if (process.env.NODE_ENV !== "production") {
@@ -69,6 +71,7 @@ export function OtpAuthForm() {
     } catch (err) {
       if (err instanceof OtpCooldownError) {
         setCooldownBlocked(true);
+        setCooldownPhone(phone);
         setSeconds(err.retryAfterSeconds);
         setError(cooldownMessage(err.retryAfterSeconds));
         return;
@@ -192,6 +195,9 @@ export function OtpAuthForm() {
               setStep("phone");
               setOtp("");
               setError("");
+              setSeconds(0);
+              setCooldownBlocked(false);
+              setCooldownPhone("");
             }}
           >
             Change number
@@ -228,7 +234,16 @@ export function OtpAuthForm() {
             value={phone}
             aria-describedby={error ? errorId : undefined}
             aria-invalid={Boolean(error) && !cooldownBlocked ? true : undefined}
-            onChange={(event) => setPhone(event.target.value)}
+            onChange={(event) => {
+              const nextPhone = event.target.value;
+              setPhone(nextPhone);
+              if (cooldownPhone && nextPhone !== cooldownPhone) {
+                setSeconds(0);
+                setCooldownBlocked(false);
+                setCooldownPhone("");
+                setError("");
+              }
+            }}
           />
         </div>
         {error ? (

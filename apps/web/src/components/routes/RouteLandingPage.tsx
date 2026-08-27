@@ -5,6 +5,7 @@ import { FaqItem } from "@/components/content/FaqItem";
 import { RouteStickyCta } from "@/components/routes/RouteStickyCta";
 import { breadcrumbJsonLd, faqJsonLd, JsonLd, serviceJsonLd } from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { AuthAwareBookButton } from "@/components/auth/AuthAwareBookButton";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -67,9 +68,19 @@ export function RouteLandingPage({ route }: { route: RoutePageContent }) {
             </h1>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">{route.heroText}</p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Button href="#book" variant="taxi" className="uppercase">
+              <AuthAwareBookButton
+                authedHref="#book"
+                intent={{
+                  next: path,
+                  pickup: origin.name,
+                  drop: destination.name,
+                  tripType: route.routeType === "airport" ? "airport" : "one-way",
+                }}
+                variant="taxi"
+                className="uppercase"
+              >
                 {route.primaryCtaLabel}
-              </Button>
+              </AuthAwareBookButton>
               <Button href="/#contact" variant="secondary">
                 Call now
               </Button>
@@ -229,16 +240,36 @@ export function RouteLandingPage({ route }: { route: RoutePageContent }) {
             <div>
               <h2 className="font-display text-2xl font-semibold">Ready to request this car?</h2>
               <p className="mt-2 max-w-lg text-sm text-white/70">
-                The form above is a preview. Phone and OTP login, and live desk booking, come in later phases.
+                Enter your trip details to request a cab. You&apos;ll verify your mobile number before completing
+                your booking request.
               </p>
             </div>
-            <Button href="#book" variant="taxi" className="uppercase">
+            <AuthAwareBookButton
+              authedHref="#book"
+              intent={{
+                next: path,
+                pickup: origin.name,
+                drop: destination.name,
+                tripType: route.routeType === "airport" ? "airport" : "one-way",
+              }}
+              variant="taxi"
+              className="uppercase"
+            >
               {route.primaryCtaLabel}
-            </Button>
+            </AuthAwareBookButton>
           </Container>
         </section>
       </main>
-      <RouteStickyCta bookHref="#book" bookLabel={route.primaryCtaLabel} />
+      <RouteStickyCta
+        authedHref="#book"
+        bookLabel={route.primaryCtaLabel}
+        intent={{
+          next: path,
+          pickup: origin.name,
+          drop: destination.name,
+          tripType: route.routeType === "airport" ? "airport" : "one-way",
+        }}
+      />
     </>
   );
 }

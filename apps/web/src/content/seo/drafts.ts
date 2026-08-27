@@ -40,10 +40,10 @@ export const unpublishedDemoRoute: RoutePageContent = {
   farePlaceholder: "Price on request",
 };
 
-/** Published for internal review, never sitemap / Google index. */
+/** Catalog fixture only. Never published — must not SSG or appear in production. */
 export const reviewOnlyDemoRoute: RoutePageContent = {
   slug: "review-only-demo-route",
-  published: true,
+  published: false,
   indexable: false,
   lastUpdated: "2026-08-26",
   originId: "hsr-layout",
@@ -65,10 +65,10 @@ export const reviewOnlyDemoRoute: RoutePageContent = {
     to: "Bangalore Airport",
     tripType: "Airport drop",
     vehicleCategories: "Sedan",
-    distanceNote: "Exact kilometres will appear when mapping is connected.",
+    distanceNote: "Distance varies with the route taken.",
     durationNote: "Approximate information — final journey time depends on traffic.",
   },
-  intro: "Fixture page for noindex behaviour. Not a production marketing URL.",
+  intro: "Catalog fixture only. Never published as a public URL.",
   pickupInformation: { heading: "Pickup", body: "Review fixture." },
   destinationInformation: { heading: "Drop", body: "Review fixture." },
   travelGuidance: { heading: "Guidance", body: "Review fixture." },

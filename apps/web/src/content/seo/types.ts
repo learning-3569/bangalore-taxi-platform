@@ -1,3 +1,5 @@
+import { parentServiceSlugs } from "@/content/seo/reserved";
+
 export type LocationType = "city" | "locality" | "airport" | "outstation" | "landmark";
 
 export type LocationContent = {
@@ -15,7 +17,7 @@ export type LocationContent = {
   published: boolean;
 };
 
-export type ParentServiceId = "airport-taxi-bangalore" | "outstation-taxi-bangalore";
+export type ParentServiceId = (typeof parentServiceSlugs)[number];
 
 export type RouteType = "airport" | "outstation";
 export type RouteDirection = "to-airport" | "from-airport" | "outstation-outbound" | "outstation-inbound";

@@ -21,6 +21,17 @@ vi.mock("next/image", () => ({
     createElement("img", { alt: props.alt ?? "", src: typeof props.src === "string" ? props.src : "" }),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+vi.stubGlobal(
+  "fetch",
+  vi.fn(async () => new Response(null, { status: 401 })),
+);
+
 afterEach(() => {
   cleanup();
 });

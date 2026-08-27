@@ -2,14 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { AccountMenu } from "@/components/auth/AccountMenu";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { IconPhone } from "@/components/ui/Icons";
 import { businessPlaceholders, navItems, siteConfig } from "@/config/site";
+import { loginHref } from "@/lib/booking-intent";
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const { user, ready } = useAuth();
+  const bookHref = user ? "/#book" : loginHref({ next: "/" });
   const menuId = useId();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
@@ -74,7 +79,8 @@ export function Header() {
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <Button href="/#book" variant="taxi" className="uppercase">
+            {ready && user ? <AccountMenu /> : null}
+            <Button href={bookHref} variant="taxi" className="uppercase">
               Book a cab
             </Button>
           </div>
@@ -87,7 +93,7 @@ export function Header() {
             >
               <IconPhone />
             </Link>
-            <Button href="/#book" variant="taxi" className="px-3 py-2 text-xs uppercase">
+            <Button href={bookHref} variant="taxi" className="px-3 py-2 text-xs uppercase">
               Book
             </Button>
             <button
@@ -124,7 +130,13 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            <Button href="/#book" variant="taxi" className="mt-2 uppercase" onClick={closeMenu}>
+            {ready && user ? (
+              <div className="mt-2 border-t border-line pt-3">
+                <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Account</p>
+                <AccountMenu compact />
+              </div>
+            ) : null}
+            <Button href={bookHref} variant="taxi" className="mt-2 uppercase" onClick={closeMenu}>
               Book a cab
             </Button>
           </Container>

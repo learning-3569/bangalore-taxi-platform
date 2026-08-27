@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
             .Validate(options => options.PermitLimit > 0, "RateLimiting:PermitLimit must be positive.")
             .ValidateOnStart();
 
+        builder.AddPhoneOtpAuthentication();
         AddDatabase(builder);
         AddControllersAndProblemDetails(builder);
         AddCors(builder);
@@ -120,7 +121,8 @@ public static class ServiceCollectionExtensions
 
                 policy.WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
         });
     }

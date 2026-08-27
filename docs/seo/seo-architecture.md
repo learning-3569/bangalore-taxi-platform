@@ -19,7 +19,7 @@ The public homepage remains a primary landing URL. It uses:
 - FAQ copy in HTML plus `FAQPage` JSON-LD that matches that copy
 - `WebSite`, `Organization`, and `TaxiService` JSON-LD **without** telephone, street address, opening hours, aggregate ratings, or review stars
 
-Local/dev hosts are **not** advertised as indexable: `isPublicIndexable()` sets `robots` to disallow `/` and page metadata to `noindex` when the configured origin is `localhost` or `127.0.0.1`. Production indexing requires a real `NEXT_PUBLIC_SITE_URL`.
+Local/dev, staging, and preview hosts are **not** indexable unless `INDEX_PUBLIC=true` is set explicitly. `isPublicIndexable()` does **not** infer indexing from hostname. Production may index only when that flag is enabled at build/runtime. Canonical URLs still use `NEXT_PUBLIC_SITE_URL`.
 
 Do not add AggregateRating or Review schema until real, permissioned reviews exist.
 
@@ -32,14 +32,14 @@ Do not add AggregateRating or Review schema until real, permissioned reviews exi
 | SSR / SSG via App Router | Yes; route slugs via `generateStaticParams` |
 | Metadata API | Central helper; per-page overrides |
 | Canonical URLs | Relative paths; origin from env; each route self-canonicalizes |
-| `robots.ts` | Allow `/` only when `isPublicIndexable()`; sitemap URL |
-| `sitemap.ts` | Home, legal, indexable services, indexable routes |
+| `robots.ts` | Allow `/` only when `INDEX_PUBLIC=true`; otherwise disallow `/` |
+| `sitemap.ts` | Home, indexable services, indexable routes via `getSitemapPaths()`; no legal placeholders; no location records |
 | Structured data | Conservative JSON-LD helpers; CMS later |
 | Internal linking | Homepage hashes, legal URLs, published routes only |
 | Performance | Server Components; small client islands (header, booking, sticky CTA) |
 | Local SEO (NAP) | Placeholders only until the business confirms details |
 
-Test-only or private routes: unpublished slugs 404. `published && !indexable` may SSG with `noindex` and stay out of the sitemap (`review-only-demo-route` fixture).
+Test-only or private routes: unpublished slugs 404, including catalog fixtures such as `review-only-demo-route`. Do not ship review fixtures as public HTML. `published && !indexable` would SSG with `noindex` and stay out of the sitemap if used later; it is not used for the current fixtures.
 
 ## Service, route, and location pages
 
@@ -69,13 +69,13 @@ Flags:
 | --- | --- | --- |
 | false | — | Not generated, not in sitemap |
 | true | false | Generated, `noindex`, omitted from sitemap |
-| true | true | SSG, indexable (when the site origin is production), sitemap |
+| true | true | SSG, indexable only when `INDEX_PUBLIC=true`, sitemap |
 
 ### Route registry
 
 `apps/web/src/content/seo/catalog.ts` is the frontend catalog API: `getRouteBySlug`, `getPublishedRoutes`, `getIndexableRoutes`, `getRoutesByType`, `getRoutesFromLocation`, `getRoutesToLocation`, `getRelatedRoutes`, `getReverseRoute`, plus location and parent-service helpers.
 
-`validateSeoCatalog` runs at module load (duplicate slugs, unknown locations, reserved collisions, missing indexable metadata, bad related slugs, self-routes).
+`validateSeoCatalog` runs at module load (duplicate slugs, unknown locations, reserved collisions for routes/location pages and non-parent services, missing indexable metadata, `indexable` without `published` on routes and services, published location landers before a renderer exists, bad related slugs, self-routes).
 
 ### Route creation workflow
 
@@ -99,7 +99,7 @@ When a lander ships:
 
 - Unique title, H1, and body
 - Canonical to itself unless consolidating a duplicate
-- It appears via `getIndexableSeoPaths()` so the sitemap stays truthful
+- It appears via `getIndexableRenderedPaths()` / `getSitemapPaths()` so the sitemap stays truthful
 - Link it from the homepage only when the page exists
 
 ## Internal linking
@@ -121,9 +121,11 @@ Do not build footer or body link farms. Popular routes on the homepage are **lin
 
 ## Sitemap and robots
 
-- Sitemap lists home, legal, **indexable** services, and **indexable** routes. Drafts and `noindex` review URLs must not appear. Location catalog rows are not URLs.
-- Architecture: later map CMS `published` slugs into `getIndexableSeoPaths()`.
-- `robots.txt` allows crawlers on a public production origin. Localhost is disallowed. Admin remains a separate app with its own disallow-all robots file.
+- Sitemap source of truth: `getSitemapPaths()` (`apps/web/src/lib/public-paths.ts`), which lists `/` plus catalog pages that are **published, indexable, and actually rendered**.
+- Do not list location catalog records, unpublished drafts, review fixtures, or legal **placeholders**. When approved Privacy/Terms copy exists, flip `legalPagesArePlaceholders` so those URLs can enter the sitemap.
+- Architecture: later map CMS `published && indexable` slugs into `getIndexableRenderedPaths()`.
+- `robots.txt` allows crawlers only when `INDEX_PUBLIC=true`. Development, testing, staging, and preview stay `Disallow: /`. Admin remains a separate app with its own disallow-all robots file.
+- Review fixtures must stay `published: false` so they are not in `generateStaticParams`.
 
 ## Structured data
 

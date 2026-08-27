@@ -45,6 +45,11 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger, IHo
             Instance = httpContext.Request.Path.Value
         };
         problem.Extensions["traceId"] = traceId;
+        if (mapped.RetryAfterSeconds is int retryAfter)
+        {
+            httpContext.Response.Headers.RetryAfter = retryAfter.ToString();
+            problem.Extensions["retryAfterSeconds"] = retryAfter;
+        }
 
         httpContext.Response.StatusCode = mapped.Status;
         httpContext.Response.ContentType = "application/problem+json";

@@ -43,7 +43,7 @@ public sealed class DatabaseSchemaTests
     {
         RequireDatabase();
         await using var db = _postgres.CreateContext();
-        var booking = CreateGuestBooking("BLR-2026-000010", assigned: false);
+        var booking = CreateGuestBooking(UniqueBookingNumber(), assigned: false);
         db.Bookings.Add(booking);
         await db.SaveChangesAsync();
 
@@ -58,11 +58,12 @@ public sealed class DatabaseSchemaTests
     {
         RequireDatabase();
         await using var db = _postgres.CreateContext();
-        db.Bookings.Add(CreateGuestBooking("BLR-2026-000011", assigned: false));
+        var bookingNumber = UniqueBookingNumber();
+        db.Bookings.Add(CreateGuestBooking(bookingNumber, assigned: false));
         await db.SaveChangesAsync();
 
         await using var db2 = _postgres.CreateContext();
-        db2.Bookings.Add(CreateGuestBooking("BLR-2026-000011", assigned: false));
+        db2.Bookings.Add(CreateGuestBooking(bookingNumber, assigned: false));
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db2.SaveChangesAsync());
         Assert.IsType<PostgresException>(ex.InnerException);
         Assert.Equal(PostgresErrorCodes.UniqueViolation, ((PostgresException)ex.InnerException!).SqlState);
@@ -77,7 +78,7 @@ public sealed class DatabaseSchemaTests
 
         await using var db = _postgres.CreateContext();
         db.Bookings.Add(CreateGuestBooking(
-            "BLR-2026-000020",
+            UniqueBookingNumber(),
             assigned: true,
             driverId: driver.Id,
             vehicleId: vehicle.Id,
@@ -87,7 +88,7 @@ public sealed class DatabaseSchemaTests
 
         await using var db2 = _postgres.CreateContext();
         db2.Bookings.Add(CreateGuestBooking(
-            "BLR-2026-000021",
+            UniqueBookingNumber(),
             assigned: true,
             driverId: driver.Id,
             vehicleId: vehicle.Id,
@@ -104,11 +105,11 @@ public sealed class DatabaseSchemaTests
     {
         RequireDatabase();
         await using var setup = _postgres.CreateContext();
-        var (driver, vehicleA) = await CreateDriverAndVehicleAsync(setup, "KA01AB1001");
+        var (driver, vehicleA) = await CreateDriverAndVehicleAsync(setup);
         var vehicleB = new Vehicle
         {
             Id = Guid.NewGuid(),
-            RegistrationNumber = "KA01AB1002",
+            RegistrationNumber = UniqueRegistration(),
             VehicleTypeId = ReferenceData.VehicleTypeIds.Sedan,
             Capacity = 4,
             StatusId = ReferenceData.VehicleStatusActive
@@ -118,7 +119,7 @@ public sealed class DatabaseSchemaTests
 
         await using var db = _postgres.CreateContext();
         db.Bookings.Add(CreateGuestBooking(
-            "BLR-2026-000030",
+            UniqueBookingNumber(),
             assigned: true,
             driverId: driver.Id,
             vehicleId: vehicleA.Id,
@@ -128,7 +129,7 @@ public sealed class DatabaseSchemaTests
 
         await using var db2 = _postgres.CreateContext();
         db2.Bookings.Add(CreateGuestBooking(
-            "BLR-2026-000031",
+            UniqueBookingNumber(),
             assigned: true,
             driverId: driver.Id,
             vehicleId: vehicleB.Id,
@@ -145,11 +146,13 @@ public sealed class DatabaseSchemaTests
     {
         RequireDatabase();
         await using var db = _postgres.CreateContext();
+        var ipv4EntityId = Guid.NewGuid();
+        var ipv6EntityId = Guid.NewGuid();
         db.AuditLogs.Add(new AuditLog
         {
             Action = "booking.accept",
             EntityType = "booking",
-            EntityId = Guid.NewGuid(),
+            EntityId = ipv4EntityId,
             IpAddress = IPAddress.Parse("203.0.113.10"),
             CreatedAt = DateTimeOffset.UtcNow
         });
@@ -157,23 +160,26 @@ public sealed class DatabaseSchemaTests
         {
             Action = "booking.assign",
             EntityType = "booking",
-            EntityId = Guid.NewGuid(),
+            EntityId = ipv6EntityId,
             IpAddress = IPAddress.Parse("2001:db8::1"),
             CreatedAt = DateTimeOffset.UtcNow
         });
         await db.SaveChangesAsync();
 
-        Assert.Equal(2, await db.AuditLogs.CountAsync());
+        var stored = await db.AuditLogs
+            .Where(row => row.EntityId == ipv4EntityId || row.EntityId == ipv6EntityId)
+            .ToListAsync();
+        Assert.Equal(2, stored.Count);
+        Assert.Contains(stored, row => IPAddress.Parse("203.0.113.10").Equals(row.IpAddress));
+        Assert.Contains(stored, row => IPAddress.Parse("2001:db8::1").Equals(row.IpAddress));
     }
 
-    private static async Task<(Driver Driver, Vehicle Vehicle)> CreateDriverAndVehicleAsync(
-        BangaloreTaxiDbContext db,
-        string registration = "KA01AB1234")
+    private static async Task<(Driver Driver, Vehicle Vehicle)> CreateDriverAndVehicleAsync(BangaloreTaxiDbContext db)
     {
         var user = new User
         {
             Id = Guid.NewGuid(),
-            PhoneE164 = "+91" + Guid.NewGuid().ToString("N")[..10],
+            PhoneE164 = UniqueTestPhoneE164(),
             StatusId = ReferenceData.UserStatusActive
         };
         var driver = new Driver
@@ -187,7 +193,7 @@ public sealed class DatabaseSchemaTests
         var vehicle = new Vehicle
         {
             Id = Guid.NewGuid(),
-            RegistrationNumber = registration,
+            RegistrationNumber = UniqueRegistration(),
             VehicleTypeId = ReferenceData.VehicleTypeIds.Sedan,
             Capacity = 4,
             StatusId = ReferenceData.VehicleStatusActive
@@ -234,7 +240,7 @@ public sealed class DatabaseSchemaTests
             booking.EstimatedEndAt = endAt;
             booking.AssignedDriverDisplayName = "Test Driver";
             booking.AssignedDriverPhoneE164 = "+919811111111";
-            booking.AssignedVehicleRegistration = "KA01AB1234";
+            booking.AssignedVehicleRegistration = "KA01AB9999";
             booking.AssignedVehicleTypeCode = "sedan";
             booking.AssignedVehicleTypeName = "Sedan";
             var from = DateTime.SpecifyKind(pickupAt.UtcDateTime, DateTimeKind.Utc);
@@ -243,6 +249,27 @@ public sealed class DatabaseSchemaTests
         }
 
         return booking;
+    }
+
+    private static long _phoneSequence;
+    private static long _bookingSequence = Random.Shared.Next(100_000, 400_000);
+
+    private static string UniqueTestPhoneE164()
+    {
+        var n = Interlocked.Increment(ref _phoneSequence);
+        var eight = (DateTime.UtcNow.Ticks % 10_000_000 * 100 + n % 100) % 100_000_000;
+        return "+9198" + eight.ToString("D8");
+    }
+
+    private static string UniqueBookingNumber()
+    {
+        var n = Interlocked.Increment(ref _bookingSequence);
+        return BookingNumberFormatter.Format(2026, n);
+    }
+
+    private static string UniqueRegistration()
+    {
+        return "KA" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
     }
 
     private void RequireDatabase()

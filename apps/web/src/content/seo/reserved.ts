@@ -1,3 +1,6 @@
+/** Static parent landers. Reserved so `[slug]` cannot claim them; catalog services may use these slugs. */
+export const parentServiceSlugs = ["airport-taxi-bangalore", "outstation-taxi-bangalore"] as const;
+
 /** App Router and future product paths that CMS slugs must never collide with. */
 export const reservedPublicSlugs = [
   "privacy-policy",

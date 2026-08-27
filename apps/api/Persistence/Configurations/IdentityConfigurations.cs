@@ -24,6 +24,9 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable("users", table =>
         {
             table.HasCheckConstraint("ck_users_email_or_phone", "email IS NOT NULL OR phone_e164 IS NOT NULL");
+            table.HasCheckConstraint(
+                "ck_users_phone_e164_format",
+                "phone_e164 IS NULL OR phone_e164 ~ '^\\+[1-9][0-9]{7,14}$'");
         });
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Email).HasColumnType("citext").HasMaxLength(256);

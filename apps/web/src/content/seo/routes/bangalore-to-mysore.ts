@@ -27,7 +27,7 @@ export const bangaloreToMysore: RoutePageContent = {
     to: "Mysore (Mysuru)",
     tripType: "Outstation — one-way or round-trip",
     vehicleCategories: "Sedan, SUV, Innova Crysta, Premium",
-    distanceNote: "Exact kilometres will appear when mapping is connected.",
+    distanceNote: "Distance varies with the route taken.",
     durationNote: "Approximate information — final journey time depends on traffic.",
   },
   intro:
@@ -38,7 +38,7 @@ export const bangaloreToMysore: RoutePageContent = {
   },
   destinationInformation: {
     heading: "Arriving in Mysore",
-    body: "Give a hotel, residence, or a central drop you actually want. We do not run a sightseeing itinerary product on this page. If you need the car to wait for a same-day return, that is a round-trip request with different duty expectations — choose round-trip on the form when you mean it. Local Mysore sightseeing hours, if offered later, will be a written policy, not an implied free add-on.",
+    body: "Give a hotel, residence, or a central drop you actually want. We do not run a sightseeing itinerary product on this page. If you need the car to wait for a same-day return, that is a round-trip request with different duty expectations — choose round-trip on the form when you mean it. Local Mysore running is not included unless you ask for it as part of the request.",
   },
   travelGuidance: {
     heading: "One-way versus round-trip",
@@ -61,8 +61,8 @@ export const bangaloreToMysore: RoutePageContent = {
   howBookingWorks: [
     { title: "Set the cities", body: "Bangalore pickup, Mysore drop, date, time, one-way or round-trip." },
     { title: "Choose a category", body: "Highway comfort matters more than it does on a short city hop." },
-    { title: "Desk review", body: "Form preview now; outstation requests reach the desk in a later phase." },
-    { title: "Driver details", body: "After acceptance, on the launch messaging channel." },
+    { title: "Desk review", body: "Outstation requests stay pending confirmation until operations accept the trip." },
+    { title: "Driver details", body: "Shared after the Bangalore–Mysore trip is accepted." },
   ],
   vehicleNotes: [
     { category: "Sedan", note: "Two or three adults with modest luggage on the highway." },
@@ -81,7 +81,7 @@ export const bangaloreToMysore: RoutePageContent = {
     {
       question: "Do you offer round-trip cars?",
       answer:
-        "You can request round-trip on the form. Waiting, night halt, and kilometre rules will come from the pricing engine — they are not listed here.",
+        "You can request round-trip on the form. Waiting, night halt, and kilometre rules are part of the quote — they are not listed as a package price here.",
     },
     {
       question: "What vehicle is comfortable for a family?",
@@ -96,7 +96,7 @@ export const bangaloreToMysore: RoutePageContent = {
     {
       question: "Are fares shown on this page?",
       answer:
-        "No. Price on request until the pricing engine is live. We do not invent a starting fare.",
+        "No. Price on request. We do not invent a starting fare.",
     },
   ],
   farePlaceholder: "Price on request",

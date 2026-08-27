@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { Providers } from "@/components/auth/Providers";
 import { getSiteUrl, isPublicIndexable, siteConfig } from "@/config/site";
 import "./globals.css";
 
@@ -61,10 +62,12 @@ export default function RootLayout({
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <Header />
-        {children}
-        <Footer />
-        <WhatsAppButton />
+        <Providers>
+          <Header />
+          {children}
+          <Footer />
+          <WhatsAppButton />
+        </Providers>
       </body>
     </html>
   );

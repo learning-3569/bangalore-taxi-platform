@@ -2,15 +2,16 @@ import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import HomePage from "@/app/page";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { Header } from "@/components/layout/Header";
 
 describe("homepage", () => {
   it("renders the primary heading, navigation, and booking widget", () => {
     render(
-      <>
+      <AuthProvider>
         <Header />
         <HomePage />
-      </>,
+      </AuthProvider>,
     );
     expect(
       screen.getByRole("heading", {
@@ -26,14 +27,19 @@ describe("homepage", () => {
     expect(screen.getByRole("tablist", { name: /trip type/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/vehicle type/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /book now/i })).toBeInTheDocument();
-    expect(screen.getByText(/phone verification will be required/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/verify your mobile number before completing your booking request/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/guest checkout isn.t available/i)).toBeInTheDocument();
   });
 });
 
 describe("header mobile navigation", () => {
   it("opens, exposes links, and closes on Escape", async () => {
     const user = userEvent.setup();
-    render(<Header />);
+    render(
+      <AuthProvider>
+        <Header />
+      </AuthProvider>,
+    );
     await user.click(screen.getByRole("button", { name: /open menu/i }));
     const mobile = screen.getByRole("navigation", { name: "Mobile" });
     expect(within(mobile).getByRole("link", { name: "Taxi Services" })).toBeInTheDocument();

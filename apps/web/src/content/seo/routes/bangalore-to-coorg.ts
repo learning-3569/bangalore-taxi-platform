@@ -27,7 +27,7 @@ export const bangaloreToCoorg: RoutePageContent = {
     to: "Coorg (Kodagu)",
     tripType: "Outstation — typically round-trip",
     vehicleCategories: "Sedan, SUV, Innova Crysta, Premium",
-    distanceNote: "Exact kilometres will appear when mapping is connected.",
+    distanceNote: "Distance varies with the route taken.",
     durationNote: "Approximate information — final journey time depends on traffic and hill-road conditions.",
   },
   intro:
@@ -38,7 +38,7 @@ export const bangaloreToCoorg: RoutePageContent = {
   },
   destinationInformation: {
     heading: "Where in Coorg",
-    body: "Kodagu is not a single gate. Madikeri, a specific resort, or a family estate are different drops. Write the stay name and a pin if you have one. We do not include sightseeing circuits unless you request the car for that duty as round-trip or multi-day — and those rules will be written later, not implied here.",
+    body: "Kodagu is not a single gate. Madikeri, a specific resort, or a family estate are different drops. Write the stay name and a pin if you have one. We do not include sightseeing circuits unless you request the car for that duty as round-trip or multi-day.",
   },
   travelGuidance: {
     heading: "Hills, bags, and the return",
@@ -61,8 +61,8 @@ export const bangaloreToCoorg: RoutePageContent = {
   howBookingWorks: [
     { title: "Set the stay", body: "Bangalore pickup, Coorg drop pin, dates, and one-way or round-trip." },
     { title: "Choose a category", body: "SUV or Innova is the usual family ask for this road." },
-    { title: "Desk review", body: "Preview form; live outstation intake later." },
-    { title: "Driver details", body: "After the trip is accepted." },
+    { title: "Desk review", body: "Coorg requests stay pending confirmation until operations accept the trip." },
+    { title: "Driver details", body: "Shared after this hill-road trip is accepted." },
   ],
   vehicleNotes: [
     { category: "Sedan", note: "Possible for two adults with light bags; less ideal if the group grows." },
@@ -91,12 +91,12 @@ export const bangaloreToCoorg: RoutePageContent = {
     {
       question: "Do you include sightseeing in Coorg?",
       answer:
-        "Not automatically. Local running, if offered later, will have its own rules. This page is the Bangalore–Coorg car, not a tour package.",
+        "Not automatically. This page is the Bangalore–Coorg car, not a tour package. Local running is only included if you ask for it in the request.",
     },
     {
       question: "Why is there no travel time listed?",
       answer:
-        "Hill traffic and weather vary. We will show curated or mapped times only when a source exists. Until then we state that journey time depends on conditions.",
+        "Hill traffic and weather vary. Journey time depends on conditions; we do not publish a fixed hour-count.",
     },
   ],
   farePlaceholder: "Price on request",

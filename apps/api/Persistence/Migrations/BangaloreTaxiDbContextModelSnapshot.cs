@@ -1113,6 +1113,66 @@ namespace BangaloreTaxi.Api.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BangaloreTaxi.Api.Persistence.Entities.OtpChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<short>("AttemptCount")
+                        .HasColumnType("smallint")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("PhoneE164")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("phone_e164");
+
+                    b.Property<string>("RequestIp")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_ip");
+
+                    b.Property<string>("Salt")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("salt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_otp_challenge");
+
+                    b.HasIndex("PhoneE164")
+                        .HasDatabaseName("ix_otp_challenge_phone_active")
+                        .HasFilter("consumed_at IS NULL");
+
+                    b.HasIndex("PhoneE164", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_otp_challenge_phone_e164_created_at");
+
+                    b.ToTable("otp_challenge", (string)null);
+                });
+
             modelBuilder.Entity("BangaloreTaxi.Api.Persistence.Entities.PricingComponent", b =>
                 {
                     b.Property<short>("Id")
@@ -1312,6 +1372,66 @@ namespace BangaloreTaxi.Api.Persistence.Migrations
                         .HasDatabaseName("ix_pricing_rate_pricing_plan_id_vehicle_type_id_component_id_t");
 
                     b.ToTable("pricing_rate", (string)null);
+                });
+
+            modelBuilder.Entity("BangaloreTaxi.Api.Persistence.Entities.RefreshSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid?>("ReplacedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaced_by_id");
+
+                    b.Property<string>("RequestIp")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_ip");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("user_agent");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_refresh_session");
+
+                    b.HasIndex("ReplacedById")
+                        .HasDatabaseName("ix_refresh_session_replaced_by_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_refresh_session_token_hash");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_refresh_session_user_id_created_at");
+
+                    b.ToTable("refresh_session", (string)null);
                 });
 
             modelBuilder.Entity("BangaloreTaxi.Api.Persistence.Entities.Role", b =>
@@ -1641,6 +1761,8 @@ namespace BangaloreTaxi.Api.Persistence.Migrations
                     b.ToTable("users", null, t =>
                         {
                             t.HasCheckConstraint("ck_users_email_or_phone", "email IS NOT NULL OR phone_e164 IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_users_phone_e164_format", "phone_e164 IS NULL OR phone_e164 ~ '^\\+[1-9][0-9]{7,14}$'");
                         });
                 });
 
@@ -2213,6 +2335,26 @@ namespace BangaloreTaxi.Api.Persistence.Migrations
                     b.Navigation("TripType");
 
                     b.Navigation("VehicleType");
+                });
+
+            modelBuilder.Entity("BangaloreTaxi.Api.Persistence.Entities.RefreshSession", b =>
+                {
+                    b.HasOne("BangaloreTaxi.Api.Persistence.Entities.RefreshSession", "ReplacedBy")
+                        .WithMany()
+                        .HasForeignKey("ReplacedById")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_refresh_session_refresh_session_replaced_by_id");
+
+                    b.HasOne("BangaloreTaxi.Api.Persistence.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_refresh_session_users_user_id");
+
+                    b.Navigation("ReplacedBy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BangaloreTaxi.Api.Persistence.Entities.SeoPage", b =>

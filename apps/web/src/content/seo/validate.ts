@@ -1,14 +1,24 @@
-import { reservedPublicSlugs } from "@/content/seo/reserved";
-import type { LocationContent, RoutePageContent, ServicePageContent } from "@/content/seo/types";
+import { parentServiceSlugs, reservedPublicSlugs } from "@/content/seo/reserved";
+import type {
+  LocationContent,
+  LocationPageContent,
+  RoutePageContent,
+  ServicePageContent,
+} from "@/content/seo/types";
+
+const reserved = reservedPublicSlugs as readonly string[];
+const allowedServiceReserved = parentServiceSlugs as readonly string[];
 
 export function validateSeoCatalog({
   locations,
   routes,
   services,
+  locationPages = [],
 }: {
   locations: readonly LocationContent[];
   routes: readonly RoutePageContent[];
   services: readonly ServicePageContent[];
+  locationPages?: readonly LocationPageContent[];
 }): string[] {
   const errors: string[] = [];
   const locationIds = new Map<string, LocationContent>();
@@ -19,15 +29,39 @@ export function validateSeoCatalog({
 
   const slugs = new Map<string, string>();
   function claimSlug(slug: string, kind: string) {
-    if ((reservedPublicSlugs as readonly string[]).includes(slug) && kind === "route") {
-      errors.push(`Route slug collides with reserved path: ${slug}`);
+    if (reserved.includes(slug)) {
+      if (kind === "route") {
+        errors.push(`Route slug collides with reserved path: ${slug}`);
+      } else if (kind === "location-page") {
+        errors.push(`Location page slug collides with reserved path: ${slug}`);
+      } else if (kind === "service" && !allowedServiceReserved.includes(slug)) {
+        errors.push(`Service slug collides with reserved path: ${slug}`);
+      }
     }
     const owner = slugs.get(slug);
     if (owner) errors.push(`Duplicate slug "${slug}" (${owner} vs ${kind})`);
     else slugs.set(slug, kind);
   }
 
-  for (const service of services) claimSlug(service.slug, "service");
+  for (const service of services) {
+    claimSlug(service.slug, "service");
+    if (service.indexable && !service.published) {
+      errors.push(`${service.slug}: indexable requires published`);
+    }
+  }
+
+  for (const page of locationPages) {
+    claimSlug(page.slug, "location-page");
+    if (!locationIds.has(page.localityId)) {
+      errors.push(`${page.slug}: unknown locality "${page.localityId}"`);
+    }
+    if (page.indexable && !page.published) {
+      errors.push(`${page.slug}: indexable requires published`);
+    }
+    if (page.published) {
+      errors.push(`${page.slug}: location landers are not generated; keep unpublished`);
+    }
+  }
 
   for (const route of routes) {
     claimSlug(route.slug, "route");
@@ -53,6 +87,7 @@ export function assertSeoCatalogValid(input: {
   locations: readonly LocationContent[];
   routes: readonly RoutePageContent[];
   services: readonly ServicePageContent[];
+  locationPages?: readonly LocationPageContent[];
 }) {
   const errors = validateSeoCatalog(input);
   if (errors.length > 0) {

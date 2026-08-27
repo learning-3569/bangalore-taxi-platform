@@ -47,7 +47,7 @@ Domain concepts must not take a dependency on HTTP or vendor SDKs. Persistence e
 
 ## Future modules
 
-Identity, Customers, Bookings, Drivers, Vehicles, Pricing, Notifications, SEO, Administration.
+Identity, Customers (OTP in Phase 5), Bookings, Drivers, Vehicles, Pricing, Notifications, SEO, Administration.
 
 Payment is a future phase only.
 
@@ -135,13 +135,13 @@ Local Development: HTTP on `127.0.0.1:43130`. Production: `UseHsts` + `UseHttpsR
 
 ## Authentication / authorization / audit
 
-Not implemented. Phase 3 will add authentication. Role names already exist in the database (`customer`, `admin`, `driver`). Do not add fake JWT middleware.
+Phone + OTP is implemented (Phase 5). See [identity-architecture.md](identity-architecture.md). Role names in the database: `customer`, `admin`, `driver`. JWT bearer on the API; refresh sessions in PostgreSQL.
 
-Audit rows should be written in application services after successful admin mutations (accept, assign, pricing change, SEO publish) — not as a blanket EF interceptor.
+Audit rows are written from `AuthService` for OTP and session events, and later from admin mutations — not as a blanket EF interceptor.
 
 ## Rate limiting
 
-Built-in `AddRateLimiter`. Global fixed window per IP (default 120/minute). Named policies `auth` (10/min) and `public-write` (30/min) are registered for Phase 3/5 endpoints via `[EnableRateLimiting("auth")]`. Health checks disable rate limiting. Phase 12 can add finer policies.
+Built-in `AddRateLimiter`. Global fixed window per IP (default 120/minute). Named policies `auth` (10/min) and `public-write` (30/min). `auth` is applied to `/api/v1/auth/*`. Health checks disable rate limiting.
 
 ## Request size
 

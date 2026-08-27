@@ -1,6 +1,7 @@
 using BangaloreTaxi.Api.Application;
 using BangaloreTaxi.Api.Hosting;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace BangaloreTaxi.Api;
@@ -9,6 +10,7 @@ public static class WebApplicationPipeline
 {
     public static WebApplication UseApiFoundation(this WebApplication app)
     {
+        app.UseForwardedHeaders();
         app.UseExceptionHandler();
         app.UseStatusCodePages(async statusCodeContext =>
         {
@@ -57,6 +59,8 @@ public static class WebApplicationPipeline
 
         app.UseCors(ServiceCollectionExtensions.CorsPolicyName);
         app.UseRateLimiter();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         app.MapHealthChecks("/health/live", HealthResponseWriter.LiveOptions())
             .DisableRateLimiting();

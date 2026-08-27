@@ -27,11 +27,11 @@ export const electronicCityToAirport: RoutePageContent = {
     to: "Kempegowda International Airport (BLR)",
     tripType: "Airport drop",
     vehicleCategories: "Sedan, SUV, Innova Crysta, Premium",
-    distanceNote: "Exact kilometres will appear when mapping is connected.",
+    distanceNote: "Distance varies with the route taken.",
     durationNote: "Approximate information — final journey time depends on traffic.",
   },
   intro:
-    "Electronic City sits on Bangalore’s south side. Reaching Kempegowda International Airport from here crosses a large part of the city, so the useful advice is about buffers and pickup clarity, not a single “usual time.” Phase 1 and Phase 2 campuses use different gates; a driver sent to the wrong phase wastes the only buffer you had. Bengaluru Cabs treats this as an airport-drop product: request early, desk confirms, then a car is assigned.",
+    "Electronic City sits on Bangalore’s south side. Reaching Kempegowda International Airport from here crosses a large part of the city, so the useful advice is about buffers and pickup clarity, not a single “usual time.” Phase 1 and Phase 2 campuses use different gates; a driver sent to the wrong phase wastes the only buffer you had. Bengaluru Cabs treats this as an airport-drop product: request early, the desk reviews it, then a car is assigned when the trip is accepted.",
   pickupInformation: {
     heading: "Pickup in Electronic City",
     body: "Name the phase, building, and gate. Many offices have cab lay-bys that are not the same as the visitor parking. If you are leaving from a hostel or apartment on Hosur Road rather than a campus, say so — it changes where the car should wait. We will not invent a “standard Electronic City pickup point.”",
@@ -61,8 +61,8 @@ export const electronicCityToAirport: RoutePageContent = {
   howBookingWorks: [
     { title: "Pin the campus", body: "Electronic City pickup details, airport drop, date, and time." },
     { title: "Choose a category", body: "Sedan for light bags; SUV or Innova when the boot must work." },
-    { title: "Desk review", body: "Preview form now; live desk submission later." },
-    { title: "Driver details", body: "After acceptance, on the messaging channel we publish at launch." },
+    { title: "Desk review", body: "Electronic City drops stay pending confirmation until operations accept the request." },
+    { title: "Driver details", body: "Shared after acceptance — not at the moment you submit the form." },
   ],
   vehicleNotes: [
     { category: "Sedan", note: "Fine for a couple of cabin bags and a south-Bangalore start." },
@@ -80,7 +80,7 @@ export const electronicCityToAirport: RoutePageContent = {
     {
       question: "Can I book an airport taxi from Electronic City in advance?",
       answer:
-        "Yes. Advance request is the model. Submission to the desk is not live on this form yet.",
+        "Yes. Request the drop in advance. You'll verify your mobile number before completing the booking request. Our team reviews availability before a driver is assigned.",
     },
     {
       question: "Do you pick up from both Phase 1 and Phase 2?",
@@ -100,7 +100,7 @@ export const electronicCityToAirport: RoutePageContent = {
     {
       question: "How do fares work on this route?",
       answer:
-        "Fares are not listed. A future pricing engine will calculate them. Anything you see as “from ₹…” on another site is not our rate card.",
+        "Fares are not listed. Price on request. Anything you see as “from ₹…” on another site is not our rate card.",
     },
   ],
   farePlaceholder: "Price on request",

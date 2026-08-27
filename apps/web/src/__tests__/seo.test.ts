@@ -1,10 +1,17 @@
-import { describe, expect, it } from "vitest";
-import { legalPages, navItems, services } from "@/config/site";
+import { afterEach, describe, expect, it } from "vitest";
+import { isPublicIndexable, legalPages, legalPagesArePlaceholders, navItems, services } from "@/config/site";
 import { isImplementedPublicPath } from "@/lib/paths";
+import { getSitemapPaths } from "@/lib/public-paths";
 import { createPageMetadata } from "@/lib/seo";
 import { faqJsonLd, localBusinessJsonLd } from "@/components/seo/JsonLd";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
+import { getIndexableRenderedPaths } from "@/content/seo/catalog";
+
+afterEach(() => {
+  delete process.env.INDEX_PUBLIC;
+  delete process.env.NEXT_PUBLIC_INDEX_PUBLIC;
+});
 
 describe("seo foundation", () => {
   it("creates title, description, canonical, and social metadata", () => {
@@ -20,16 +27,21 @@ describe("seo foundation", () => {
     expect(metadata.twitter?.title).toBe("Test title");
   });
 
-  it("lists only real public URLs in the sitemap", () => {
+  it("lists only rendered indexable paths in the sitemap", () => {
     const entries = sitemap();
     const urls = entries.map((entry) => entry.url);
+    expect(getSitemapPaths()).toEqual(getIndexableRenderedPaths());
     expect(urls.some((url) => url.endsWith("/") || url.endsWith("43121"))).toBe(true);
-    expect(urls.some((url) => url.includes("/privacy-policy"))).toBe(true);
-    expect(urls.some((url) => url.includes("/terms-and-conditions"))).toBe(true);
+    expect(urls.some((url) => url.includes("/privacy-policy"))).toBe(false);
+    expect(urls.some((url) => url.includes("/terms-and-conditions"))).toBe(false);
     expect(urls.some((url) => url.includes("/unpublished-demo-route"))).toBe(false);
+    expect(legalPagesArePlaceholders).toBe(true);
   });
 
-  it("does not allow crawlers on the local development host", () => {
+  it("does not allow crawlers unless INDEX_PUBLIC is enabled", () => {
+    delete process.env.INDEX_PUBLIC;
+    delete process.env.NEXT_PUBLIC_INDEX_PUBLIC;
+    expect(isPublicIndexable()).toBe(false);
     const result = robots();
     const rules = Array.isArray(result.rules) ? result.rules : [result.rules];
     expect(rules[0]?.disallow).toBe("/");
@@ -46,6 +58,28 @@ describe("seo foundation", () => {
     const faqs = [{ question: "Q", answer: "A" }];
     const data = faqJsonLd(faqs);
     expect(data.mainEntity).toHaveLength(1);
+  });
+});
+
+describe("explicit public indexing flag", () => {
+  it("indexes only when INDEX_PUBLIC=true", () => {
+    process.env.INDEX_PUBLIC = "true";
+    expect(isPublicIndexable()).toBe(true);
+    const result = robots();
+    const rules = Array.isArray(result.rules) ? result.rules : [result.rules];
+    expect(rules[0]?.allow).toBe("/");
+    expect(createPageMetadata({ title: "Home", description: "Home", path: "/" }).robots).toEqual({
+      index: true,
+      follow: true,
+    });
+  });
+
+  it("treats preview-style hosts as noindex without the flag", () => {
+    expect(isPublicIndexable()).toBe(false);
+    expect(createPageMetadata({ title: "Home", description: "Home", path: "/" }).robots).toEqual({
+      index: false,
+      follow: false,
+    });
   });
 });
 

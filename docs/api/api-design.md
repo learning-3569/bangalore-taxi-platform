@@ -67,10 +67,28 @@ GET /api/health
 {
   "status": "ok",
   "service": "BangaloreTaxi.Api",
-  "phase": "2",
+  "phase": "5",
   "utcNow": "2026-08-22T09:00:00+00:00"
 }
 ```
+
+## Auth endpoints (Phase 5)
+
+```text
+POST /api/v1/auth/otp/request
+POST /api/v1/auth/otp/verify
+POST /api/v1/auth/refresh
+POST /api/v1/auth/logout
+GET  /api/v1/auth/me
+```
+
+OTP request body: `{ "phoneNumber": "9876543210" }`. Always a generic success; it does not reveal whether the account exists. Production never returns the OTP. Resend cooldown (and the hourly request cap) respond with HTTP 429, a `Retry-After` delay in seconds, and `retryAfterSeconds` in the problem body. Those values are wait times only.
+
+OTP verify body: `{ "phoneNumber": "9876543210", "otp": "123456" }`. Response includes `accessToken`, `accessTokenExpiresAt`, `user`. `refreshToken` is included only when `X-Auth-Client: bearer` is sent (mobile / Next.js BFF).
+
+`GET /api/v1/auth/me` requires `Authorization: Bearer`. Returns `userId`, `customerId`, `phoneNumber`, `maskedPhone`, `roles`.
+
+See [identity-architecture.md](../architecture/identity-architecture.md).
 
 ## Future endpoints (not implemented)
 
@@ -95,7 +113,7 @@ There are no `/api/payments` routes in V1.
 | Area | Access |
 | --- | --- |
 | Health | Anonymous |
-| Booking create | Authenticated customer (or documented guest booking) |
+| Booking create | Authenticated customer (Phase 6+). Guest booking is not in V1. |
 | Booking read | Owner or admin |
 | Accept/reject/assign | Admin |
 | Pricing quote | Public or authenticated; calculation always server-side |
@@ -113,4 +131,4 @@ Assignment and accept should be safe to retry: never duplicate side effects; ret
 
 ## Rate limiting
 
-Global per-IP window. Future `[EnableRateLimiting("auth")]` on login/OTP and `[EnableRateLimiting("public-write")]` on booking create.
+Global per-IP window. `[EnableRateLimiting("auth")]` is applied to `/api/v1/auth/*`. `[EnableRateLimiting("public-write")]` remains for a future booking create.

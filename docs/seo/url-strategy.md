@@ -6,6 +6,8 @@ Stable, readable, lowercase, hyphenated paths. Once a public URL is published, c
 
 Production host is decided in Phase 14. Use `NEXT_PUBLIC_SITE_URL` for canonical absolute URLs. No trailing slash (Next.js default).
 
+Indexing is **not** implied by a non-localhost host. Set `INDEX_PUBLIC=true` only for the real production deployment. Staging and preview URLs stay noindex.
+
 ## Live public paths
 
 ```text
@@ -21,6 +23,8 @@ Production host is decided in Phase 14. Use `NEXT_PUBLIC_SITE_URL` for canonical
 /bangalore-to-mysore-taxi
 /bangalore-to-coorg-taxi
 ```
+
+`/privacy-policy` and `/terms-and-conditions` are stable URLs with placeholder copy: `noindex` and omitted from the sitemap until approved legal text exists (`legalPagesArePlaceholders`).
 
 Homepage sections use fragment identifiers (`/#book`, `/#services`, `/#airport`, `/#outstation`, `/#fleet`, `/#about`, `/#contact`, `/#faq`). Fragments are not separate sitemap entries.
 

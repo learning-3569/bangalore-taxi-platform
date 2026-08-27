@@ -1,6 +1,6 @@
 # Security architecture
 
-The platform will store customer names, phone numbers, addresses, and trip history. Treat that as personal data. Authentication is Phase 3; this document binds later phases.
+The platform will store customer names, phone numbers, addresses, and trip history. Treat that as personal data. Customer authentication is Phase 5 (phone + OTP).
 
 ## Principles
 
@@ -10,12 +10,16 @@ The platform will store customer names, phone numbers, addresses, and trip histo
 4. Validate and sanitize all input at the API boundary.
 5. Deny by default.
 
-## Authentication (Phase 3+)
+## Authentication (Phase 5)
 
-- Customers authenticate against the API. Exact mechanism (cookie session vs bearer) is decided in Phase 3; prefer HTTP-only cookies for browser apps if CSRF can be handled cleanly, or bearer tokens with consistent CSRF/XSS controls.
-- Admins authenticate separately. Admin accounts are not customer accounts with a flag unless a later ADR justifies it.
-- Passwords: salted hashes using ASP.NET Identity password hasher or equivalent; never store plaintext or reversible encryption.
-- Reset password via time-limited, single-use tokens.
+Customer authentication is phone + OTP. See [identity-architecture.md](identity-architecture.md).
+
+- No password, email, or guest login in V1.
+- Self-registration assigns the `customer` role only.
+- Access tokens are JWTs; refresh sessions are hashed in PostgreSQL.
+- Browser refresh credentials are HttpOnly cookies (Next.js BFF). Do not store refresh tokens in `localStorage`.
+- CSRF: `X-CSRF-Token` on cookie-authenticated refresh/logout.
+- Production SMS is not wired; `Auth:Otp:Provider` must not be `Development` in Production.
 
 ## Authorization
 
@@ -40,10 +44,11 @@ The platform will store customer names, phone numbers, addresses, and trip histo
 - Allow only the public site and admin origins.
 - Development origins are listed in `appsettings.Development.json`.
 - Production origins come from configuration, not `AllowAnyOrigin` with credentials.
+- Credentials are enabled only with an explicit origin list (cookie-based refresh).
 
 ## CSRF
 
-If cookie-based auth is chosen, use antiforgery tokens or SameSite strategies documented in Phase 3. SPA bearer-in-header setups reduce CSRF but increase XSS impact; pick one model and apply it consistently.
+Browser refresh/logout use a double-submit `X-CSRF-Token` header matched to the `bt_csrf` cookie. Mobile/BFF clients send `X-Auth-Client: bearer` and do not rely on cookies. See [identity-architecture.md](identity-architecture.md).
 
 ## XSS
 
@@ -58,8 +63,8 @@ If cookie-based auth is chosen, use antiforgery tokens or SameSite strategies do
 
 ## Rate limiting
 
-- Foundation: global per-IP fixed window (see backend architecture). Named `auth` and `public-write` policies are registered for later endpoints.
-- Phase 12 can tighten login, booking create, and password reset further.
+- Foundation: global per-IP fixed window (see backend architecture). Named `auth` (10/min) is applied to OTP request/verify/refresh/logout. Per-phone cooldown and hourly caps are enforced in `AuthService`.
+- Configure `ForwardedHeaders:KnownProxies` in production so IP limits see the real client, not the load balancer.
 
 ## Security headers
 
@@ -89,3 +94,11 @@ If cookie-based auth is chosen, use antiforgery tokens or SameSite strategies do
 
 - Admin app sends `noindex`.
 - Restrict admin URL at the network layer in production if possible (VPN or IP allowlist) in addition to authentication.
+
+## Public site indexing
+
+- `apps/web` is noindex unless `INDEX_PUBLIC=true` (or `NEXT_PUBLIC_INDEX_PUBLIC=true`).
+- Do not treat a public-looking hostname (including Vercel previews) as permission to index.
+- Catalog review fixtures stay unpublished so they are not generated as public HTML.
+- Legal placeholder pages stay `noindex` and off the sitemap until approved copy exists.
+- `/login` is `noindex` (account URL, not a marketing lander).

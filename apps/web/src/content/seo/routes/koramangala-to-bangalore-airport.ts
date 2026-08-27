@@ -27,7 +27,7 @@ export const koramangalaToAirport: RoutePageContent = {
     to: "Kempegowda International Airport (BLR)",
     tripType: "Airport drop",
     vehicleCategories: "Sedan, SUV, Innova Crysta, Premium",
-    distanceNote: "Exact kilometres will appear when mapping is connected.",
+    distanceNote: "Distance varies with the route taken.",
     durationNote: "Approximate information — final journey time depends on traffic.",
   },
   intro:
@@ -42,7 +42,7 @@ export const koramangalaToAirport: RoutePageContent = {
   },
   travelGuidance: {
     heading: "Inner-city then airport road",
-    body: "Weekend evenings in Koramangala can stall before you ever see the airport highway. Weekday mornings are a different pattern. Luggage from a hotel checkout is often two large cases; mention that so a sedan is not assumed. We still will not print a drive-time number until a mapping source exists.",
+    body: "Weekend evenings in Koramangala can stall before you ever see the airport highway. Weekday mornings are a different pattern. Luggage from a hotel checkout is often two large cases; mention that so a sedan is not assumed. Journey time depends on traffic; we do not publish a fixed minute count.",
   },
   whyChoose: [
     {
@@ -61,8 +61,8 @@ export const koramangalaToAirport: RoutePageContent = {
   howBookingWorks: [
     { title: "Name the block", body: "Koramangala pickup, airport drop, date, and time." },
     { title: "Choose a category", body: "Hotel checkouts with extra bags often need an SUV." },
-    { title: "Desk review", body: "Preview only until booking APIs exist." },
-    { title: "Driver details", body: "After acceptance, via the launch messaging channel." },
+    { title: "Desk review", body: "Koramangala drops stay pending confirmation until operations accept the request." },
+    { title: "Driver details", body: "Shared after the trip is accepted." },
   ],
   vehicleNotes: [
     { category: "Sedan", note: "Typical for a couple leaving a hotel with cabin luggage." },
@@ -80,7 +80,7 @@ export const koramangalaToAirport: RoutePageContent = {
     {
       question: "Can I book a taxi from Koramangala to the airport in advance?",
       answer:
-        "Yes. Use this page’s form as a preview of the request. Live desk submission comes in a later phase.",
+        "Yes. Request the drop in advance. You'll verify your mobile number before completing the booking request.",
     },
     {
       question: "Do you pick up from hotels in Koramangala?",
@@ -100,7 +100,7 @@ export const koramangalaToAirport: RoutePageContent = {
     {
       question: "Will I get OTP login on this page?",
       answer:
-        "Not in this phase. Phone and OTP authentication will arrive with the customer booking flow. This lander does not create an account.",
+        "Yes. You'll verify your mobile number with OTP before completing a booking request. Guest checkout isn't available.",
     },
   ],
   farePlaceholder: "Price on request",

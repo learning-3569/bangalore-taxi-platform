@@ -1,10 +1,13 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { SelectField, TextField } from "@/components/ui/Fields";
 import { tripTypes, vehicleTypes } from "@/config/site";
 import type { TripTypeValue } from "@/content/seo/types";
+import { loginHref } from "@/lib/booking-intent";
 
 type BookingWidgetProps = {
   defaultPickup?: string;
@@ -23,12 +26,27 @@ export function BookingWidget({
   submitLabel = "Book now",
   idPrefix = "",
 }: BookingWidgetProps) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [trip, setTrip] = useState<TripTypeValue>(defaultTripType);
   const [submitted, setSubmitted] = useState(false);
   const minDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    if (!user) {
+      router.push(
+        loginHref({
+          next: pathname || "/",
+          pickup: String(form.get("pickup") ?? ""),
+          drop: String(form.get("drop") ?? ""),
+          tripType: trip,
+        }),
+      );
+      return;
+    }
     setSubmitted(true);
   }
 
@@ -41,7 +59,11 @@ export function BookingWidget({
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="font-display text-lg font-semibold text-navy">{heading}</p>
-          <p className="text-xs text-ink-muted">UI preview — not sent to operations yet.</p>
+          <p className="text-xs text-ink-muted">
+            {user
+              ? "Enter your trip details and submit your booking request. Our team will review availability and confirm your trip."
+              : "Enter your trip details to request a cab. You'll verify your mobile number before completing your booking request."}
+          </p>
         </div>
       </div>
 
@@ -100,13 +122,14 @@ export function BookingWidget({
           {submitLabel}
         </Button>
         <p className="text-xs text-ink-muted">
-          We will only use these details to process a trip request. A full privacy policy is still in review.
+          We use these details only to process your trip request.
         </p>
       </div>
       {submitted ? (
-        <p role="status" className="mt-3 text-sm text-navy">
-          Captured on this page only. Online booking is not connected to the desk yet.
-        </p>
+        <div role="status" className="mt-3 text-sm text-navy">
+          <p className="font-semibold">Booking request received</p>
+          <p className="mt-1 text-ink-muted">Pending confirmation. Our team will review availability and confirm your trip.</p>
+        </div>
       ) : null}
     </form>
   );

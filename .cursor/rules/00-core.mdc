@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Bangalore Taxi Platform — core rules
 
-This is a production product developed **phase by phase**. **Phase 4B — scalable route catalog foundation is complete.** Do not start customer authentication, booking APIs, admin, or payment unless explicitly requested.
+This is a production product developed **phase by phase**. **Phase 5 — phone number + OTP authentication is complete.** Do not start booking APIs, admin operations, or payment unless explicitly requested.
 
 ## Before you change architecture or add modules
 

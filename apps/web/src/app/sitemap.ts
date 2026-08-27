@@ -1,30 +1,28 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl, legalAndHomePaths } from "@/config/site";
+import { getSiteUrl } from "@/config/site";
 import { getIndexableRoutes, getIndexableServices } from "@/content/seo/catalog";
+import { getSitemapPaths } from "@/lib/public-paths";
+
+function lastModifiedForPath(path: string): Date | undefined {
+  if (path === "/") return undefined;
+  const slug = path.slice(1);
+  const service = getIndexableServices().find((page) => page.slug === slug);
+  if (service) return new Date(service.lastUpdated);
+  const route = getIndexableRoutes().find((page) => page.slug === slug);
+  if (route) return new Date(route.lastUpdated);
+  return undefined;
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const origin = getSiteUrl();
-
-  const core = legalAndHomePaths.map((path, index) => ({
-    url: new URL(path, origin).toString(),
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: index === 0 ? 1 : 0.3,
-  }));
-
-  const services = getIndexableServices().map((page) => ({
-    url: new URL(`/${page.slug}`, origin).toString(),
-    lastModified: new Date(page.lastUpdated),
-    changeFrequency: "weekly" as const,
-    priority: 0.8,
-  }));
-
-  const routes = getIndexableRoutes().map((page) => ({
-    url: new URL(`/${page.slug}`, origin).toString(),
-    lastModified: new Date(page.lastUpdated),
-    changeFrequency: "weekly" as const,
-    priority: 0.7,
-  }));
-
-  return [...core, ...services, ...routes];
+  return getSitemapPaths().map((path) => {
+    const isHome = path === "/";
+    const isService = getIndexableServices().some((page) => `/${page.slug}` === path);
+    return {
+      url: new URL(path, origin).toString(),
+      lastModified: lastModifiedForPath(path),
+      changeFrequency: "weekly" as const,
+      priority: isHome ? 1 : isService ? 0.8 : 0.7,
+    };
+  });
 }

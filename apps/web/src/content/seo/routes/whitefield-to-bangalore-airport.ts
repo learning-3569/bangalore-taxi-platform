@@ -27,14 +27,14 @@ export const whitefieldToAirport: RoutePageContent = {
     to: "Kempegowda International Airport (BLR)",
     tripType: "Airport drop",
     vehicleCategories: "Sedan, SUV, Innova Crysta, Premium",
-    distanceNote: "Exact kilometres will appear when mapping is connected.",
+    distanceNote: "Distance varies with the route taken.",
     durationNote: "Approximate information — final journey time depends on traffic.",
   },
   intro:
-    "Whitefield sits on Bangalore’s east side. A flight drop from here is mostly about leaving enough buffer for Outer Ring Road and airport-approach congestion, not about memorising a published minute-count. Bengaluru Cabs takes the request in advance, a dispatcher reviews it, and a car is assigned when operations confirm the trip. Fares are not listed on this page; ask for a quote when booking opens.",
+    "Whitefield sits on Bangalore’s east side. A flight drop from here is mostly about leaving enough buffer for Outer Ring Road and airport-approach congestion, not about memorising a published minute-count. Bengaluru Cabs takes the request in advance, a dispatcher reviews it, and a car is assigned when operations accept the trip. Fares are price on request.",
   pickupInformation: {
     heading: "Pickup in Whitefield",
-    body: "Share a pin, apartment name, or tech-park gate. Whitefield campuses often have separate visitor and cab entries — tell us which gate the driver should use. If you are leaving from a hotel, the lobby name is enough. We do not currently publish a guaranteed waiting window at the pickup; that rule will come with the live booking policy.",
+    body: "Share a pin, apartment name, or tech-park gate. Whitefield campuses often have separate visitor and cab entries — tell us which gate the driver should use. If you are leaving from a hotel, the lobby name is enough. Waiting time at pickup is confirmed with your accepted trip, not as a blanket guarantee on this page.",
   },
   destinationInformation: {
     heading: "Drop at Bangalore Airport",
@@ -42,7 +42,7 @@ export const whitefieldToAirport: RoutePageContent = {
   },
   travelGuidance: {
     heading: "Planning the departure",
-    body: "East Bangalore traffic is heavier on weekday mornings and on Friday evenings. Early flights mean leaving when the city is quieter, but you should still treat ORR incidents as possible. If you are travelling with check-in bags plus a laptop backpack, say so when you request the car so the desk can match boot space. Night drops are ordinary work for this desk, not a surcharge we invent here — any night rule will come from the pricing engine later.",
+    body: "East Bangalore traffic is heavier on weekday mornings and on Friday evenings. Early flights mean leaving when the city is quieter, but you should still treat ORR incidents as possible. If you are travelling with check-in bags plus a laptop backpack, say so when you request the car so the desk can match boot space. Night drops are ordinary work for this desk. Night charges, if any, are part of the quoted fare — we do not invent a surcharge here.",
   },
   whyChoose: [
     {
@@ -61,8 +61,8 @@ export const whitefieldToAirport: RoutePageContent = {
   howBookingWorks: [
     { title: "Send the route", body: "Whitefield pickup, airport drop, date, and time." },
     { title: "Choose a category", body: "Sedan, SUV, Innova Crysta, or Premium — subject to availability." },
-    { title: "Desk review", body: "Online submit is a preview today. Live requests will reach operations later." },
-    { title: "Driver details", body: "After acceptance, vehicle and driver information will go out on the channel we publish at launch." },
+    { title: "Desk review", body: "Your request stays pending confirmation until operations accept the Whitefield drop." },
+    { title: "Driver details", body: "Vehicle and driver information are shared after the trip is accepted." },
   ],
   vehicleNotes: [
     { category: "Sedan", note: "Sensible default for one or two travellers with cabin bags." },
@@ -80,7 +80,7 @@ export const whitefieldToAirport: RoutePageContent = {
     {
       question: "Can I book a Whitefield to airport taxi in advance?",
       answer:
-        "Yes — advance request is the intended model. The form on this page is a preview until booking APIs go live. A dispatcher will then accept the trip before a driver is assigned.",
+        "Yes. Request the drop in advance. You'll verify your mobile number, then submit the request. A dispatcher accepts the trip before a driver is assigned — a submitted request is not a confirmed booking.",
     },
     {
       question: "What vehicle should I choose for airport luggage?",
@@ -95,12 +95,12 @@ export const whitefieldToAirport: RoutePageContent = {
     {
       question: "How will I receive driver details?",
       answer:
-        "After operations accept the booking, driver and car details will be sent on the channel we confirm at launch (SMS or WhatsApp). That channel is not connected yet.",
+        "After operations accept the booking, we share driver and car details. Submitting the form is not the same as a confirmed trip.",
     },
     {
       question: "Will I need to log in to book?",
       answer:
-        "Customer booking will later use phone number and OTP. Guest checkout is not part of V1. This page does not collect an account today.",
+        "Yes. You'll verify your mobile number with OTP before completing a booking request. Guest checkout isn't available.",
     },
   ],
   farePlaceholder: "Price on request",

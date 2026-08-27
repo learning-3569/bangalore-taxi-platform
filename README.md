@@ -2,7 +2,7 @@
 
 Advance taxi booking for a Bangalore fleet of about 20 cars. Customers discover the service through Google search, request trips in advance, and receive confirmation with driver details after an administrator accepts the request and assigns a vehicle.
 
-**Current Phase: Phase 4B — Scalable route catalog foundation (complete)**
+**Current Phase: Phase 5 — Phone number + OTP authentication (complete)**
 
 This repository is a production product developed incrementally. Do not implement later phases unless explicitly requested.
 

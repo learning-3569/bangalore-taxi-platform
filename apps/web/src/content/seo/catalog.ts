@@ -10,7 +10,6 @@ import { whitefieldToAirport } from "@/content/seo/routes/whitefield-to-bangalor
 import { airportTaxiService, outstationTaxiService } from "@/content/seo/services";
 import type {
   LocationContent,
-  LocationPageContent,
   ParentServiceId,
   RoutePageContent,
   RouteType,
@@ -33,7 +32,7 @@ export const routePages: readonly RoutePageContent[] = [
   reviewOnlyDemoRoute,
 ];
 
-assertSeoCatalogValid({ locations, routes: routePages, services: servicePages });
+assertSeoCatalogValid({ locations, routes: routePages, services: servicePages, locationPages });
 
 const RELATED_LIMIT = 4;
 
@@ -62,6 +61,12 @@ export function getRouteDestination(route: RoutePageContent): LocationContent {
 export function getServicePage(id: ParentServiceId): ServicePageContent {
   const page = servicePages.find((item) => item.slug === id);
   if (!page) throw new Error(`Unknown parent service: ${id}`);
+  return page;
+}
+
+export function getPublishedService(id: ParentServiceId): ServicePageContent | undefined {
+  const page = servicePages.find((item) => item.slug === id);
+  if (!page?.published) return undefined;
   return page;
 }
 
@@ -128,20 +133,24 @@ export function getRelatedRoutes(page: RoutePageContent): RoutePageContent[] {
   return picked;
 }
 
-export function getPublishedLocations(): LocationPageContent[] {
-  return locationPages.filter((page) => page.published && page.indexable && !isReservedSlug(page.slug));
-}
-
-/** Sitemap / Google: published + indexable only. Location records are not pages. */
-export function getIndexableSeoPaths(): string[] {
+/**
+ * Canonical sitemap / indexable URL list: home plus published+indexable pages that the app actually renders.
+ * Location catalog records and unpublished location landers are never included.
+ */
+export function getIndexableRenderedPaths(): string[] {
   return [
+    "/",
     ...getIndexableServices().map((page) => `/${page.slug}`),
     ...getIndexableRoutes().map((page) => `/${page.slug}`),
-    ...getPublishedLocations().map((page) => `/${page.slug}`),
   ];
 }
 
-/** Crawlable HTML the app will generate, including noindex review URLs. */
+/** Same as getIndexableRenderedPaths. */
+export function getIndexableSeoPaths(): string[] {
+  return getIndexableRenderedPaths();
+}
+
+/** Crawlable HTML the app will generate for published services and routes. */
 export function getGeneratedSeoPaths(): string[] {
   return [...getPublishedServices().map((page) => `/${page.slug}`), ...getPublishedRoutes().map((page) => `/${page.slug}`)];
 }

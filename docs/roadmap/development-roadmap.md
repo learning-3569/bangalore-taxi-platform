@@ -2,9 +2,9 @@
 
 The product is built one phase at a time in this repository. When a phase is requested, implement only that phase. Do not start the next phase automatically.
 
-**Current phase: Phase 4B — Scalable route catalog foundation (complete)**
+**Current phase: Phase 5 — Phone number + OTP authentication (complete)**
 
-The numbered roadmap below still lists “Phase 3 — Customer Authentication” as originally planned. That work is **deferred**. Do not start booking, OTP, admin, or payment automatically.
+The numbered roadmap below still lists an earlier “Phase 3 — Customer Authentication” heading from the original plan. That work is implemented as **Phase 5**. Do not start booking APIs, admin operations, or payment automatically.
 
 Payment is a future phase outside V1.
 
@@ -135,6 +135,30 @@ The original “Phase 3 — Customer Authentication” section below is **not** 
 **Scope:** Typed `LocationContent`, `originId`/`destinationId` on routes, `published` vs `indexable`, catalog registry helpers, related-route fallback, reserved-slug validation, parent pages `/airport-taxi-bangalore` and `/outstation-taxi-bangalore`. No PostgreSQL SEO tables.
 
 **Future SEO growth (not done):** SEO CMS → location management → route management → content authoring → review → publish → index → sitemap → Search Console monitoring.
+
+---
+
+## Phase 4C — SEO safety & pre-authentication hardening (implemented)
+
+**Objective:** Close indexing and catalog-safety gaps from the Phase 4B review before authentication work.
+
+**Scope:** Unpublished review fixtures, parent-service `published` gating, explicit `INDEX_PUBLIC` indexing flag, legal-placeholder noindex/sitemap exclusion, single sitemap path helper, catalog validation for catalog-state contradictions. No OTP, booking, payment, or UI redesign.
+
+**Acceptance criteria:** Review fixtures are not generated in production; staging/preview stay noindex unless the flag is set; legal placeholders are noindex and off the sitemap; web tests, lint, and production build pass.
+
+**Out of scope:** Phase 5 authentication, booking APIs, payment.
+
+---
+
+## Phase 5 — Phone number + OTP authentication (implemented)
+
+**Objective:** Customers verify a mobile number with OTP and receive an authenticated session before any future booking API.
+
+**Scope:** E.164 normalization, OTP challenges, Customer-only self-registration, JWT access + rotating refresh sessions, Next.js login UI and BFF cookies, forwarded headers, auth rate limits. No booking persist, no payment, no production SMS vendor.
+
+**Acceptance criteria:** Request/verify/refresh/logout/`me` work; OTP is hashed, single-use, expiry- and attempt-limited; new users get Customer role only; browser refresh is HttpOnly; tests and builds pass.
+
+**Out of scope:** `POST /api/v1/bookings`, passwords, admin/driver self-registration, production SMS.
 
 ---
 

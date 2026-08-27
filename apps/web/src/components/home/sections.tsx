@@ -9,7 +9,6 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { media } from "@/config/media";
 import {
   businessPlaceholders,
-  exampleTestimonials,
   faqs,
   fleet,
   howItWorks,
@@ -140,15 +139,12 @@ export function Airport() {
               <strong className="text-navy">Airport drop.</strong> Whitefield, Electronic City, Koramangala and the rest of the city — early departures included.
             </li>
             <li>
-              <strong className="text-navy">Advance booking.</strong> Request → desk confirmation → driver details. Live SLAs when operations go online.
+              <strong className="text-navy">Advance booking.</strong> Request → pending confirmation → driver details after the desk accepts the trip.
             </li>
           </ul>
-          <Button href="/#book" variant="primary" className="mt-8 uppercase">
+          <Button href="/airport-taxi-bangalore" variant="primary" className="mt-8 uppercase">
             Book airport taxi
           </Button>
-          <p className="mt-3 text-xs text-ink-muted">
-            Dedicated URL later: /airport-taxi-bangalore — only when that page has unique copy.
-          </p>
         </div>
       </Container>
     </section>
@@ -203,7 +199,7 @@ export function Fleet() {
           invert
           eyebrow="Our cars"
           title="Choose the cabin that fits the people and the bags."
-          description="Categories, not a live stock list. Named models replace these placeholders when inventory is confirmed. Fares stay “price on request” until the engine is live."
+          description="Request a category that fits the people and the bags. Exact models depend on availability. Fares are price on request."
         />
         <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {fleet.map((vehicle) => (
@@ -338,19 +334,9 @@ export function Reviews() {
       <Container className="max-w-4xl">
         <SectionHeading
           eyebrow="What riders say"
-          title="Layout for real comments — later."
-          description="These are typesetting samples, not Google stars. They will be replaced with permissioned quotes."
+          title="Customer reviews aren’t published on this site yet."
+          description="When we share comments, they’ll be from real trips with permission — not sample quotes presented as ratings."
         />
-        <div className="mt-10 space-y-10">
-          {exampleTestimonials.map((item) => (
-            <blockquote key={item.attribution} className="border-l-4 border-taxi pl-6">
-              <p className="font-display text-xl leading-snug text-navy sm:text-2xl">{item.quote}</p>
-              <footer className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                {item.attribution}
-              </footer>
-            </blockquote>
-          ))}
-        </div>
       </Container>
     </section>
   );
@@ -360,7 +346,7 @@ export function Faq() {
   return (
     <section id="faq" className="bg-paper-soft py-16 sm:py-24">
       <Container className="max-w-3xl">
-        <SectionHeading eyebrow="FAQ" title="Straight answers while policy is still being written." />
+        <SectionHeading eyebrow="FAQ" title="Common questions about booking a Bangalore taxi." />
         <div className="mt-8 divide-y divide-line border-y border-line">
           {faqs.map((item) => (
             <FaqItem key={item.question} {...item} />
@@ -383,9 +369,9 @@ export function SeoCopy() {
           Mysore and Coorg.
         </p>
         <p className="mt-4">
-          A request carries pickup, drop, date, time, trip type, and vehicle category. The desk confirms, then
-          shares driver details. There is no payment on this website yet. Fares will come from the server when
-          pricing is live.
+          A request carries pickup, drop, date, time, trip type, and vehicle category. The desk reviews it, then
+          shares driver details after the trip is accepted. There is no payment on this website. Fares are price
+          on request.
         </p>
       </Container>
     </section>
@@ -410,7 +396,8 @@ export function FinalCta() {
             Ready for a quieter ride across Bangalore?
           </h2>
           <p className="mt-3 max-w-lg text-sm text-white/75">
-            Book the cab in a few fields. Confirmation messaging switches on with the booking API.
+            Enter your trip details to request a cab. You&apos;ll verify your mobile number before completing your
+            booking request.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -433,7 +420,7 @@ export function Contact() {
         <SectionHeading
           eyebrow="Contact"
           title="Talk to the booking desk"
-          description={`${businessPlaceholders.phone}. ${businessPlaceholders.email}. ${businessPlaceholders.address}. Publish live numbers here only after the business confirms them.`}
+          description={`${businessPlaceholders.phone}. ${businessPlaceholders.email}. ${businessPlaceholders.address}.`}
         />
       </Container>
     </section>

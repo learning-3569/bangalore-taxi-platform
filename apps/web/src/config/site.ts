@@ -16,15 +16,22 @@ export function getSiteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:43121";
 }
 
-/** Local and unset hosts must not be advertised as indexable production URLs. */
-export function isPublicIndexable(): boolean {
-  try {
-    const { hostname } = new URL(getSiteUrl());
-    return hostname !== "127.0.0.1" && hostname !== "localhost";
-  } catch {
-    return false;
-  }
+function envFlagEnabled(name: string): boolean {
+  const value = process.env[name]?.trim().toLowerCase();
+  return value === "true" || value === "1";
 }
+
+/**
+ * Crawlers may index only when explicitly enabled.
+ * Development, testing, staging, and preview hosts stay noindex unless INDEX_PUBLIC=true.
+ * Do not infer this from hostname.
+ */
+export function isPublicIndexable(): boolean {
+  return envFlagEnabled("INDEX_PUBLIC") || envFlagEnabled("NEXT_PUBLIC_INDEX_PUBLIC");
+}
+
+/** Flip to false when approved Privacy/Terms copy replaces LegalPlaceholder. */
+export const legalPagesArePlaceholders = true;
 
 /** WhatsApp digits only, no +. Leave empty until the business confirms a number. */
 export function getWhatsAppNumber(): string {
@@ -95,10 +102,10 @@ export const heroSlides = [
 
 export const trustItems = [
   { title: "24/7 desk", text: "Night arrivals and early departures are normal work, not exceptions." },
-  { title: "Assigned drivers", text: "A car is confirmed after the desk reviews the request — not a random street hail." },
-  { title: "Clean cars", text: "Sedan, SUV, Innova, and premium categories. Exact models follow live inventory." },
+  { title: "Assigned drivers", text: "A car is assigned after the desk reviews your request — not a random street hail." },
+  { title: "Clean cars", text: "Sedan, SUV, Innova, and premium categories. Exact models depend on availability." },
   { title: "On-time airport runs", text: "Built around BLR pickups and drops, not generic city hopping." },
-  { title: "Fares when they are ready", text: "No invented “from ₹999” stickers. Price on request until the engine is live." },
+  { title: "Fares on request", text: "No invented “from ₹999” stickers. Price on request for each trip." },
 ] as const;
 
 export const services = [
@@ -132,7 +139,7 @@ export const services = [
   },
   {
     title: "Corporate taxi",
-    description: "Advance cars for office travel. Billing process will be published when it exists.",
+    description: "Advance cars for office travel. Billing is arranged with your booking.",
     href: "/#contact",
     image: media.corporateService,
     featured: false,
@@ -167,7 +174,7 @@ export const fleet = [
     name: "Innova Crysta",
     seats: "6–7 passengers",
     luggage: "Group luggage",
-    description: "The usual ask for outstation groups. Model is a category placeholder until the live list is confirmed.",
+    description: "A roomy option for outstation groups.",
     image: media.fleetInnova,
     fare: "Price on request",
   },
@@ -212,13 +219,13 @@ export const howItWorks = [
   },
   {
     step: "3",
-    title: "Confirm the request",
-    body: "The form is a preview today. It will reach the desk when booking APIs go live.",
+    title: "Submit your request",
+    body: "You'll verify your mobile number, then send the request. Status stays pending confirmation until our team accepts it.",
   },
   {
     step: "4",
     title: "Ride when assigned",
-    body: "Driver and car details follow after operations accept the trip. That message is not live yet.",
+    body: "Driver and car details are shared after operations accept the trip — not when you first submit the request.",
   },
 ] as const;
 
@@ -233,11 +240,11 @@ export const whyChooseUs = [
   },
   {
     title: "Clean, current cars",
-    body: "Categories you can request now; named models when inventory is confirmed.",
+    body: "Categories you can request now; named models depend on availability.",
   },
   {
-    title: "Clear fare rules later",
-    body: "No fake starting prices. The rate card will come from the pricing engine.",
+    title: "Honest fares",
+    body: "Price on request. We don't publish invented starting prices.",
   },
   {
     title: "A real Bangalore desk",
@@ -245,39 +252,21 @@ export const whyChooseUs = [
   },
 ] as const;
 
-export const exampleTestimonials = [
-  {
-    quote:
-      "Sample layout only: “The airport pickup was on time and the car was clean.” Replace with a permissioned comment.",
-    attribution: "Placeholder — not a live review",
-  },
-  {
-    quote:
-      "Sample layout only: “Mysore day trip, clear timing, no haggling at the kerb.” Replace with a verified quote.",
-    attribution: "Placeholder — not a live review",
-  },
-  {
-    quote:
-      "Sample layout only: “Booked the night before an early flight.” Do not treat these as ratings.",
-    attribution: "Placeholder — not a live review",
-  },
-] as const;
-
 export const faqs = [
   {
     question: "How can I book a Bangalore taxi?",
     answer:
-      "Use the booking form with pickup, drop, date, and time. Online submission to the desk will be enabled in a later phase. Until then, the form is a preview of the request flow.",
+      "Enter your trip details to request a cab. You'll verify your mobile number before completing your booking request. Our team then reviews availability.",
   },
   {
     question: "Do you provide airport taxi service?",
     answer:
-      "Yes — scheduled pickups and drops for Kempegowda International Airport. Meeting points and waiting rules will be published with the live booking flow.",
+      "Yes — scheduled pickups and drops for Kempegowda International Airport. Share your flight window with the request so the desk can plan.",
   },
   {
     question: "Can I book a taxi in advance?",
     answer:
-      "That is the intended model: request, desk confirmation, then driver details. Timelines will be stated when booking opens.",
+      "Yes. Request the trip ahead of time. A submitted request is pending confirmation until operations accept it.",
   },
   {
     question: "Do you provide outstation taxis?",
@@ -292,12 +281,12 @@ export const faqs = [
   {
     question: "How will I receive driver details?",
     answer:
-      "After a booking is accepted, driver and vehicle details will go out on the channel we publish at launch (SMS or WhatsApp). That channel is not connected yet.",
+      "After operations accept the booking, we share driver and vehicle details. Submitting a request is not the same as a confirmed trip.",
   },
   {
     question: "Can I book without creating an account?",
     answer:
-      "Guest booking is not part of V1. Phone verification will be required as part of the booking flow. That step is not on this website yet.",
+      "You'll verify your mobile number with OTP before completing a booking request. Guest checkout isn't available.",
   },
 ] as const;
 

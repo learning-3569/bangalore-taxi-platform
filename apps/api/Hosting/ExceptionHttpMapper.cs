@@ -3,7 +3,7 @@ using Npgsql;
 
 namespace BangaloreTaxi.Api.Hosting;
 
-public readonly record struct MappedError(int Status, string Title, string Detail);
+public readonly record struct MappedError(int Status, string Title, string Detail, int? RetryAfterSeconds = null);
 
 /// <summary>
 /// Maps exceptions to safe Problem Details fields. Never includes stack traces or connection strings.
@@ -12,6 +12,30 @@ public static class ExceptionHttpMapper
 {
     public static MappedError Map(Exception exception)
     {
+        if (exception is Application.InvalidRequestException invalid)
+        {
+            return new MappedError(StatusCodes.Status400BadRequest, "Invalid request", invalid.Message);
+        }
+
+        if (exception is Application.UnauthorizedException unauthorized)
+        {
+            return new MappedError(StatusCodes.Status401Unauthorized, "Unauthorized", unauthorized.Message);
+        }
+
+        if (exception is Application.TooManyRequestsException tooMany)
+        {
+            return new MappedError(
+                StatusCodes.Status429TooManyRequests,
+                "Too Many Requests",
+                tooMany.Message,
+                tooMany.RetryAfterSeconds);
+        }
+
+        if (exception is Application.ServiceUnavailableException unavailable)
+        {
+            return new MappedError(StatusCodes.Status503ServiceUnavailable, "Service Unavailable", unavailable.Message);
+        }
+
         if (exception is Application.ConflictException conflict)
         {
             return new MappedError(StatusCodes.Status409Conflict, "Conflict", conflict.Message);

@@ -1,4 +1,5 @@
 import { LegalPlaceholder } from "@/components/legal/LegalPlaceholder";
+import { legalPagesArePlaceholders } from "@/config/site";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -6,6 +7,7 @@ export const metadata = createPageMetadata({
   description:
     "Terms and conditions placeholder for Bangalore Taxi. Final text requires business and legal review.",
   path: "/terms-and-conditions",
+  indexable: !legalPagesArePlaceholders,
 });
 
 export default function TermsPage() {

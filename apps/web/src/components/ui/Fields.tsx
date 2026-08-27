@@ -7,21 +7,41 @@ type FieldProps = {
   id: string;
   label: string;
   hint?: string;
+  error?: string;
 };
 
 export function TextField({
   id,
   label,
   hint,
+  error,
   ...props
 }: FieldProps & InputHTMLAttributes<HTMLInputElement>) {
+  const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
   return (
     <div>
       <label htmlFor={id} className="text-sm font-medium text-ink">
         {label}
       </label>
-      <input id={id} className={fieldClass} {...props} />
-      {hint ? <p className="mt-1 text-xs text-ink-muted">{hint}</p> : null}
+      <input
+        id={id}
+        className={fieldClass}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy}
+        {...props}
+      />
+      {hint ? (
+        <p id={hintId} className="mt-1 text-xs text-ink-muted">
+          {hint}
+        </p>
+      ) : null}
+      {error ? (
+        <p id={errorId} role="alert" className="mt-1 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

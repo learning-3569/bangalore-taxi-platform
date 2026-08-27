@@ -27,6 +27,8 @@ public sealed class BangaloreTaxiDbContext : DbContext
     public DbSet<SeoPage> SeoPages => Set<SeoPage>();
     public DbSet<SeoPageFaq> SeoPageFaqs => Set<SeoPageFaq>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
+    public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
     public DbSet<OperationalSetting> OperationalSettings => Set<OperationalSetting>();
 
     public DbSet<UserStatus> UserStatuses => Set<UserStatus>();

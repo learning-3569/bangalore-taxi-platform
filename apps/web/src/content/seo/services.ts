@@ -16,7 +16,7 @@ export const airportTaxiService: ServicePageContent = {
     "Timed cars for BLR pickups and drops — from east-side tech parks, inner neighbourhoods, and south Bangalore campuses.",
   heroImage: media.heroAirport,
   intro:
-    "Airport work is a different brief from a city hop. Bags, flight windows, and terminal kerbs matter more than a neighbourhood shortcut. Bengaluru Cabs takes the request in advance; a dispatcher reviews it; a car is assigned when operations confirm. This page is the parent for locality-to-airport and airport-to-locality landers that have their own unique copy. Fares are not listed. We do not claim airport concessions or airline partnerships we do not have.",
+    "Airport work is a different brief from a city hop. Bags, flight windows, and terminal kerbs matter more than a neighbourhood shortcut. Bengaluru Cabs takes the request in advance; a dispatcher reviews it; a car is assigned when operations accept the trip. Dedicated pages cover specific corridors such as Whitefield and Electronic City. Fares are price on request. We do not claim airport concessions or airline partnerships we do not have.",
   sections: [
     {
       heading: "Drops to the airport",
@@ -24,11 +24,11 @@ export const airportTaxiService: ServicePageContent = {
     },
     {
       heading: "Pickups after you land",
-      body: "Arrivals are about meeting you after baggage, not guessing a city average. Share the flight number when you can. Precise kerb instructions and waiting rules will be published with the live booking flow. Until then, treat this as the service overview, not a meet-and-greet product sheet.",
+      body: "Arrivals are about meeting you after baggage, not guessing a city average. Share the flight number when you can. Meeting instructions are shared with an accepted pickup request. This page is the service overview, not a meet-and-greet product sheet.",
     },
     {
       heading: "How to request the car",
-      body: "Use the booking form with pickup, drop, date, and time. Online submit is a preview today. Phone verification will be required as part of the booking flow when accounts launch. Guest checkout is not part of V1.",
+      body: "Use the booking form with pickup, drop, date, and time. You'll verify your mobile number before completing your booking request. Guest checkout isn't available.",
     },
   ],
   faq: [
@@ -40,12 +40,12 @@ export const airportTaxiService: ServicePageContent = {
     {
       question: "Can I book an airport taxi in advance?",
       answer:
-        "Advance request is the model. The form is a preview until booking APIs go live. A dispatcher will accept the trip before a driver is assigned.",
+        "Yes. Request the trip in advance. You'll verify your mobile number, then submit the request. A dispatcher accepts the trip before a driver is assigned.",
     },
     {
       question: "Will I need to verify my phone?",
       answer:
-        "Phone verification will be required as part of the booking flow. That login is not on this website yet. Guest booking is not offered in V1.",
+        "Yes. You'll verify your mobile number with OTP before completing a booking request. Guest checkout isn't available.",
     },
   ],
 };
@@ -69,7 +69,7 @@ export const outstationTaxiService: ServicePageContent = {
   sections: [
     {
       heading: "One-way and round-trip",
-      body: "Choose one-way when you are not coming back with the same car. Choose round-trip when the group returns together. Waiting, night halt, and kilometre rules will come from the pricing engine — they are not printed here.",
+      body: "Choose one-way when you are not coming back with the same car. Choose round-trip when the group returns together. Waiting, night halt, and kilometre rules are part of the quote — they are not printed as a package price here.",
     },
     {
       heading: "Vehicles for the road",
@@ -77,7 +77,7 @@ export const outstationTaxiService: ServicePageContent = {
     },
     {
       heading: "How to request the car",
-      body: "The form is a preview. Phone verification will be required as part of the booking flow later. Do not expect a live confirmation SMS from this page.",
+      body: "Enter your trip details to request a cab. You'll verify your mobile number before completing your booking request. A submitted request is pending confirmation until our team accepts it.",
     },
   ],
   faq: [
@@ -92,7 +92,7 @@ export const outstationTaxiService: ServicePageContent = {
     },
     {
       question: "Are fares shown here?",
-      answer: "No. Price on request until the pricing engine is live.",
+      answer: "No. Price on request.",
     },
   ],
 };

@@ -4,6 +4,7 @@ import { BookingWidget } from "@/components/booking/BookingWidget";
 import { FaqItem } from "@/components/content/FaqItem";
 import { breadcrumbJsonLd, faqJsonLd, JsonLd, serviceJsonLd } from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { AuthAwareBookButton } from "@/components/auth/AuthAwareBookButton";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -60,9 +61,17 @@ export function ServiceLandingPage({ service }: { service: ServicePageContent })
             </h1>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">{service.heroText}</p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Button href="#book" variant="taxi" className="uppercase">
+              <AuthAwareBookButton
+                authedHref="#book"
+                intent={{
+                  next: path,
+                  tripType: service.routeType === "airport" ? "airport" : "one-way",
+                }}
+                variant="taxi"
+                className="uppercase"
+              >
                 Book a cab
-              </Button>
+              </AuthAwareBookButton>
               <Button href="/#contact" variant="secondary">
                 Call now
               </Button>

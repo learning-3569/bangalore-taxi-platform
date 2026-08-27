@@ -27,18 +27,18 @@ export const airportToWhitefield: RoutePageContent = {
     to: "Whitefield",
     tripType: "Airport pickup",
     vehicleCategories: "Sedan, SUV, Innova Crysta, Premium",
-    distanceNote: "Exact kilometres will appear when mapping is connected.",
+    distanceNote: "Distance varies with the route taken.",
     durationNote: "Approximate information — final journey time depends on traffic.",
   },
   intro:
     "Arrivals are a different job from a home-to-airport drop. Bags come off the belt late, international queues stretch, and you may walk out at an hour when Whitefield gates are quieter. This page is for people landing at Kempegowda International Airport and heading to an east-Bangalore home, hotel, or office. We do not sell a meet-and-greet product we have not defined, and we do not quote a fixed drive time.",
   pickupInformation: {
     heading: "Meeting you at the airport",
-    body: "Share the flight number and whether you are arriving domestic or international so the desk can plan. Pickup is at the passenger terminal area used for taxis — we will publish a precise meeting instruction with the live booking flow. We do not currently operate an in-terminal lounge or a named Fast Track lane. If the flight is delayed, tell the desk; waiting rules will be written into policy later rather than invented here.",
+    body: "Share the flight number and whether you are arriving domestic or international so the desk can plan. Pickup is at the passenger terminal area used for taxis. Meeting instructions are shared with an accepted request. We do not operate an in-terminal lounge or a named Fast Track lane. If the flight is delayed, tell the desk; waiting is handled with your trip, not as a published free-wait number here.",
   },
   destinationInformation: {
     heading: "Drop in Whitefield",
-    body: "Give an apartment complex, hotel, or campus gate. Night arrivals into gated communities sometimes need a gate pass or a resident’s name — add that in the request notes when the form supports it. If you are going straight to an office park, mention the building so the driver is not sent to the wrong ITPL entrance.",
+    body: "Give an apartment complex, hotel, or campus gate. Night arrivals into gated communities sometimes need a gate pass or a resident’s name — include that in your request. If you are going straight to an office park, mention the building so the driver is not sent to the wrong ITPL entrance.",
   },
   travelGuidance: {
     heading: "After you land",
@@ -61,8 +61,8 @@ export const airportToWhitefield: RoutePageContent = {
   howBookingWorks: [
     { title: "Flight and drop", body: "Airport pickup, Whitefield destination, date, and expected landing window." },
     { title: "Choose a category", body: "Match boot space to the bags coming off the belt." },
-    { title: "Desk review", body: "The form is a preview. Live pickup requests will reach operations later." },
-    { title: "Driver details", body: "Sent after the trip is accepted, on the launch messaging channel." },
+    { title: "Desk review", body: "Airport pickups stay pending confirmation until operations accept the request." },
+    { title: "Driver details", body: "Shared after the trip is accepted — not when you first submit the request." },
   ],
   vehicleNotes: [
     { category: "Sedan", note: "Works for a solo traveller with a suitcase and a backpack." },
@@ -80,12 +80,12 @@ export const airportToWhitefield: RoutePageContent = {
     {
       question: "Do you pick up at Bangalore Airport for Whitefield?",
       answer:
-        "Yes. This page is for inbound trips from Kempegowda International Airport to Whitefield. Precise kerb instructions will be published with live booking.",
+        "Yes. This page is for inbound trips from Kempegowda International Airport to Whitefield. Meeting instructions are shared with an accepted request.",
     },
     {
       question: "What if my flight is delayed?",
       answer:
-        "Share the flight number when you can. Waiting and delay handling will be part of the booking policy; we do not state a free-wait number here because it is not approved yet.",
+        "Share the flight number when you can. Waiting and delay handling are set with your accepted trip; we do not publish a free-wait number here.",
     },
     {
       question: "Can I book a larger vehicle after a family landing?",
@@ -95,12 +95,12 @@ export const airportToWhitefield: RoutePageContent = {
     {
       question: "How will I recognise the driver?",
       answer:
-        "You will receive driver and vehicle details after the booking is accepted. Until messaging is live, this page cannot promise a particular app or SMS format.",
+        "You receive driver and vehicle details after the booking is accepted. A submitted request is still pending confirmation until then.",
     },
     {
       question: "Is payment taken in the car?",
       answer:
-        "Online payment is not on this website. How you settle a confirmed trip will be published with the booking launch. Do not assume a fare from this page.",
+        "Online payment is not taken on this website. How you settle an accepted trip is shared with that booking. Do not assume a fare from this page.",
     },
   ],
   farePlaceholder: "Price on request",

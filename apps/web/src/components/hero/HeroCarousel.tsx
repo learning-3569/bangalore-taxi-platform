@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { heroSlides } from "@/config/site";
+import { AuthAwareBookButton } from "@/components/auth/AuthAwareBookButton";
 
 const INTERVAL_MS = 3000;
 
@@ -71,9 +72,9 @@ export function HeroCarousel() {
         </h1>
         <p className="mt-4 max-w-md text-base leading-relaxed text-white/80 sm:text-lg">{slide.text}</p>
         <div className="mt-7 flex flex-wrap gap-3">
-          <Button href="/#book" variant="taxi">
+          <AuthAwareBookButton authedHref="/#book" intent={{ next: "/" }} variant="taxi">
             Book a cab
-          </Button>
+          </AuthAwareBookButton>
           <Button href="/#contact" variant="secondary">
             Call now
           </Button>

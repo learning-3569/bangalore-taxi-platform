@@ -10,8 +10,7 @@ export function Footer() {
         <div>
           <Logo variant="footer" />
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/70">
-            Airport transfers, city rides, and outstation cars from a Bangalore desk. Fares, phone,
-            and fleet models appear here once the business confirms them.
+            Airport transfers, city rides, and outstation cars from a Bangalore desk. Fares are price on request.
           </p>
         </div>
         <div>
@@ -43,7 +42,7 @@ export function Footer() {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-white/45">Live links only where a unique route page exists.</p>
+          <p className="mt-3 text-xs text-white/45">More corridors are added as we publish unique route pages.</p>
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-taxi">Contact</p>
@@ -68,7 +67,7 @@ export function Footer() {
           <p>
             © {new Date().getFullYear()} {siteConfig.name}. Bengaluru, Karnataka.
           </p>
-          <p>Login / My bookings will appear when accounts launch. Payment is not on this site.</p>
+          <p>Verify your mobile number to complete a booking request. Payment is not taken on this site.</p>
         </Container>
       </div>
     </footer>

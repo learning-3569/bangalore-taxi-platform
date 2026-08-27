@@ -18,6 +18,23 @@ public sealed class ExceptionHttpMapperTests
     }
 
     [Fact]
+    public void TooManyRequests_maps_to_429_with_retry_after()
+    {
+        var mapped = ExceptionHttpMapper.Map(new TooManyRequestsException("Please wait before requesting another code.", 12));
+        Assert.Equal(429, mapped.Status);
+        Assert.Equal(12, mapped.RetryAfterSeconds);
+        Assert.DoesNotContain("otp", mapped.Detail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void UnauthorizedException_maps_to_401()
+    {
+        var mapped = ExceptionHttpMapper.Map(new UnauthorizedException("Unable to verify the code."));
+        Assert.Equal(401, mapped.Status);
+        Assert.DoesNotContain("otp", mapped.Detail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void NotFoundException_maps_to_404()
     {
         var mapped = ExceptionHttpMapper.Map(new NotFoundException("Booking was not found."));

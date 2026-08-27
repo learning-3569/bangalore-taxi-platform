@@ -146,8 +146,41 @@ Single identity table for everyone who can authenticate. Profiles (`customer`, `
 
 - At least one of `email` or `phone_e164` must be present (`CHECK`).
 - Unique indexes on `email` and `phone_e164` where not null.
+- `phone_e164` is null or E.164 (`^\+[1-9][0-9]{7,14}$`).
 
 **Not stored:** Aadhaar, PAN, date of birth, full address on the user, government ID scans.
+
+**Phase 5:** public authentication is phone + OTP. `password_hash` stays nullable and unused (reserved for a possible later staff-password phase). OTP plaintext is never stored.
+
+### 4.2a OtpChallenge
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | PK |
+| phone_e164 | varchar(16) | Normalized destination |
+| code_hash | varchar(64) | HMAC-SHA256 hex |
+| salt | varchar(32) | Per-challenge |
+| expires_at | timestamptz | |
+| attempt_count | smallint | |
+| consumed_at | timestamptz | Set on success, replace, or lock |
+| created_at | timestamptz | |
+| request_ip | varchar(64) | |
+
+### 4.2b RefreshSession
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid | PK |
+| user_id | uuid | FK `users` |
+| token_hash | varchar(64) | SHA-256 of refresh token, unique |
+| expires_at | timestamptz | |
+| created_at | timestamptz | |
+| revoked_at | timestamptz | Logout, rotation, replay |
+| replaced_by_id | uuid | Next session after rotation |
+| request_ip | varchar(64) | |
+| user_agent | varchar(256) | |
+
+Migration: `PhoneOtpAuthentication`.
 
 **Approved:** one identity table (`users`) with roles. There is no separate admin identity store. The future authorization layer (not Phase 1) must ensure customer-role sessions cannot call admin endpoints. A staff member who also books can hold both `admin` and `customer` roles.
 

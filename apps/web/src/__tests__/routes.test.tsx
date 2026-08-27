@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { generateStaticParams } from "@/app/[slug]/page";
+import sitemap from "@/app/sitemap";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { RouteLandingPage } from "@/components/routes/RouteLandingPage";
 import { ServiceLandingPage } from "@/components/routes/ServiceLandingPage";
 import { breadcrumbJsonLd, faqJsonLd, serviceJsonLd } from "@/components/seo/JsonLd";
-import { popularRoutes } from "@/config/site";
+import { legalPagesArePlaceholders, popularRoutes } from "@/config/site";
 import {
+  getIndexableRenderedPaths,
   getIndexableRoutes,
   getPublishedRoute,
   getPublishedRoutes,
+  getPublishedService,
   getRelatedRoutes,
   getReverseRoute,
   getRouteBySlug,
@@ -15,22 +20,34 @@ import {
   getRoutesToLocation,
   getServicePage,
   isReservedSlug,
+  locationPages,
   locations,
   routePages,
   servicePages,
 } from "@/content/seo/catalog";
+import type { ServicePageContent } from "@/content/seo/types";
 import { validateSeoCatalog } from "@/content/seo/validate";
 import { isImplementedPublicPath } from "@/lib/paths";
+import { getSitemapPaths } from "@/lib/public-paths";
 import { createPageMetadata } from "@/lib/seo";
-import sitemap from "@/app/sitemap";
 
 describe("route catalog", () => {
   it("publishes demonstration routes and keeps drafts unpublished", () => {
     expect(getIndexableRoutes()).toHaveLength(6);
-    expect(getPublishedRoutes().some((page) => page.slug === "review-only-demo-route")).toBe(true);
+    expect(getPublishedRoutes().some((page) => page.slug === "review-only-demo-route")).toBe(false);
     expect(getIndexableRoutes().some((page) => page.slug === "review-only-demo-route")).toBe(false);
     expect(getPublishedRoute("unpublished-demo-route")).toBeUndefined();
+    expect(getPublishedRoute("review-only-demo-route")).toBeUndefined();
     expect(getRouteBySlug("unpublished-demo-route")?.published).toBe(false);
+    expect(getRouteBySlug("review-only-demo-route")?.published).toBe(false);
+    expect(getRouteBySlug("review-only-demo-route")?.indexable).toBe(false);
+  });
+
+  it("does not generate the review fixture in production static params", () => {
+    const slugs = generateStaticParams().map((entry) => entry.slug);
+    expect(slugs).not.toContain("review-only-demo-route");
+    expect(slugs).not.toContain("unpublished-demo-route");
+    expect(isImplementedPublicPath("/review-only-demo-route")).toBe(false);
   });
 
   it("only links related routes that are published and indexable from customer pages", () => {
@@ -72,7 +89,7 @@ describe("route catalog", () => {
 
 describe("catalog validation", () => {
   it("accepts the live catalog", () => {
-    expect(validateSeoCatalog({ locations, routes: routePages, services: servicePages })).toEqual([]);
+    expect(validateSeoCatalog({ locations, routes: routePages, services: servicePages, locationPages })).toEqual([]);
   });
 
   it("detects duplicate slugs, unknown locations, and reserved collisions", () => {
@@ -97,6 +114,61 @@ describe("catalog validation", () => {
       routes: [{ ...sample, slug: "airport-taxi-bangalore" }],
     });
     expect(reserved.some((error) => error.includes("reserved"))).toBe(true);
+
+    const serviceIndexable = validateSeoCatalog({
+      locations,
+      routes: routePages,
+      services: [{ ...servicePages[0], published: false, indexable: true, slug: "airport-taxi-bangalore" }],
+    });
+    expect(serviceIndexable.some((error) => error.includes("indexable requires published"))).toBe(true);
+
+    const reservedService = validateSeoCatalog({
+      locations,
+      routes: [],
+      services: [{ ...servicePages[0], slug: "login" } as ServicePageContent],
+    });
+    expect(reservedService.some((error) => error.includes("reserved"))).toBe(true);
+
+    const locationPage = validateSeoCatalog({
+      locations,
+      routes: [],
+      services: servicePages,
+      locationPages: [
+        {
+          slug: "taxi-service-whitefield",
+          published: true,
+          indexable: true,
+          lastUpdated: "2026-08-26",
+          localityId: "not-a-place",
+          seoTitle: "Test",
+          metaDescription: "Test",
+          h1: "Test",
+          intro: "Test",
+        },
+      ],
+    });
+    expect(locationPage.some((error) => error.includes("unknown locality"))).toBe(true);
+    expect(locationPage.some((error) => error.includes("not generated"))).toBe(true);
+
+    const reservedLocation = validateSeoCatalog({
+      locations,
+      routes: [],
+      services: servicePages,
+      locationPages: [
+        {
+          slug: "privacy-policy",
+          published: false,
+          indexable: false,
+          lastUpdated: "2026-08-26",
+          localityId: "whitefield",
+          seoTitle: "Test",
+          metaDescription: "Test",
+          h1: "Test",
+          intro: "Test",
+        },
+      ],
+    });
+    expect(reservedLocation.some((error) => error.includes("reserved"))).toBe(true);
   });
 
   it("protects reserved public slugs from the dynamic route table", () => {
@@ -111,7 +183,11 @@ describe("route landing pages", () => {
   it("renders unique H1, breadcrumbs, booking prefill, and FAQ for outbound Whitefield", () => {
     const route = getPublishedRoute("whitefield-to-bangalore-airport-taxi");
     expect(route).toBeDefined();
-    render(<RouteLandingPage route={route!} />);
+    render(
+      <AuthProvider>
+        <RouteLandingPage route={route!} />
+      </AuthProvider>,
+    );
     expect(screen.getByRole("heading", { level: 1, name: route!.h1 })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Airport taxi" })).toHaveAttribute("href", "/airport-taxi-bangalore");
@@ -119,12 +195,20 @@ describe("route landing pages", () => {
     expect(screen.getByDisplayValue("Bangalore Airport")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /bangalore airport → whitefield/i })).toBeInTheDocument();
     expect(screen.getByText(/can i book a whitefield to airport taxi in advance/i)).toBeInTheDocument();
+    const bookCtas = screen.getAllByRole("link", { name: route!.primaryCtaLabel });
+    expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("/login?"));
+    expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("pickup=Whitefield"));
+    expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("whitefield-to-bangalore-airport-taxi"));
   });
 
   it("renders inbound airport copy that is not a reversed outbound page", () => {
     const outbound = getPublishedRoute("whitefield-to-bangalore-airport-taxi")!;
     const inbound = getPublishedRoute("bangalore-airport-to-whitefield-taxi")!;
-    render(<RouteLandingPage route={inbound} />);
+    render(
+      <AuthProvider>
+        <RouteLandingPage route={inbound} />
+      </AuthProvider>,
+    );
     expect(screen.getByRole("heading", { level: 1, name: inbound.h1 })).toBeInTheDocument();
     expect(inbound.intro).not.toBe(outbound.intro);
     expect(inbound.pickupInformation.body).not.toBe(outbound.pickupInformation.body);
@@ -133,21 +217,40 @@ describe("route landing pages", () => {
 
   it("renders an outstation lander with round-trip context", () => {
     const route = getPublishedRoute("bangalore-to-mysore-taxi")!;
-    render(<RouteLandingPage route={route} />);
+    render(
+      <AuthProvider>
+        <RouteLandingPage route={route} />
+      </AuthProvider>,
+    );
     expect(screen.getByRole("heading", { level: 1, name: route.h1 })).toBeInTheDocument();
     expect(screen.getByText(/one-way versus round-trip/i)).toBeInTheDocument();
   });
 });
 
 describe("parent service pages", () => {
+  it("gates parent services on the published flag", () => {
+    expect(getPublishedService("airport-taxi-bangalore")?.published).toBe(true);
+    expect(getPublishedService("outstation-taxi-bangalore")?.published).toBe(true);
+    expect(getIndexableRenderedPaths()).toContain("/airport-taxi-bangalore");
+    expect(getIndexableRenderedPaths()).toContain("/outstation-taxi-bangalore");
+  });
+
   it("renders airport and outstation service landers with unique H1s and route links", () => {
     const airport = getServicePage("airport-taxi-bangalore");
     const outstation = getServicePage("outstation-taxi-bangalore");
-    const { unmount } = render(<ServiceLandingPage service={airport} />);
+    const { unmount } = render(
+      <AuthProvider>
+        <ServiceLandingPage service={airport} />
+      </AuthProvider>,
+    );
     expect(screen.getByRole("heading", { level: 1, name: airport.h1 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /whitefield → bangalore airport/i })).toBeInTheDocument();
     unmount();
-    render(<ServiceLandingPage service={outstation} />);
+    render(
+      <AuthProvider>
+        <ServiceLandingPage service={outstation} />
+      </AuthProvider>,
+    );
     expect(screen.getByRole("heading", { level: 1, name: outstation.h1 })).toBeInTheDocument();
     expect(outstation.h1).not.toBe(airport.h1);
     expect(screen.getByRole("link", { name: /bangalore → mysore/i })).toBeInTheDocument();
@@ -169,16 +272,29 @@ describe("route metadata and sitemap", () => {
       indexable: false,
     });
     expect(hidden.robots).toEqual({ index: false, follow: false });
+    expect(legalPagesArePlaceholders).toBe(true);
+    const legal = createPageMetadata({
+      title: "Privacy Policy",
+      description: "Placeholder",
+      path: "/privacy-policy",
+      indexable: !legalPagesArePlaceholders,
+    });
+    expect(legal.robots).toEqual({ index: false, follow: false });
   });
 
-  it("includes indexable routes and services and excludes drafts and noindex", () => {
+  it("includes indexable routes and services and excludes drafts, fixtures, and legal placeholders", () => {
     const urls = sitemap().map((entry) => entry.url);
+    const paths = getSitemapPaths();
+    expect(paths).toEqual(getIndexableRenderedPaths());
     expect(urls.some((url) => url.includes("/whitefield-to-bangalore-airport-taxi"))).toBe(true);
     expect(urls.some((url) => url.includes("/airport-taxi-bangalore"))).toBe(true);
     expect(urls.some((url) => url.includes("/outstation-taxi-bangalore"))).toBe(true);
     expect(urls.some((url) => url.includes("/unpublished-demo-route"))).toBe(false);
     expect(urls.some((url) => url.includes("/review-only-demo-route"))).toBe(false);
-    expect(urls).toHaveLength(3 + getIndexableRoutes().length + 2);
+    expect(urls.some((url) => url.includes("/privacy-policy"))).toBe(false);
+    expect(urls.some((url) => url.includes("/terms-and-conditions"))).toBe(false);
+    expect(urls.some((url) => url.includes("/taxi-service-"))).toBe(false);
+    expect(getSitemapPaths()).toHaveLength(1 + getIndexableRoutes().length + 2);
   });
 
   it("emits parseable BreadcrumbList, Service, and FAQ JSON-LD without ratings", () => {

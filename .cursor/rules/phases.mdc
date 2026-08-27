@@ -7,6 +7,8 @@ alwaysApply: true
 
 When the user says “Implement Phase N”, implement **only** Phase N as specified in `docs/roadmap/development-roadmap.md`.
 
+**Phase 5 (phone OTP) is complete.** Do not start booking APIs, admin operations, or payment unless explicitly requested.
+
 Before implementing:
 
 1. Read this file and `.cursor/rules/00-core.mdc`.

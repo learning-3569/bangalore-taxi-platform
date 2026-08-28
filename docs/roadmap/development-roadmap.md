@@ -264,6 +264,8 @@ The original “Phase 3 — Customer Authentication” section below is **not** 
 
 ## Phase 8 — Driver & Vehicle Management
 
+**Status:** Complete for assignment operations, operational driver/vehicle CRUD, reversible deactivation, and temporal roster management. Driver onboarding/KYC and a driver application remain out of scope.
+
 **Objective:** Admins manage drivers and vehicles and assign them to bookings without overlap.
 
 **Scope:** CRUD, active flags, assign/change driver and vehicle, double-booking protection.

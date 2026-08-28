@@ -202,7 +202,8 @@ public sealed class BookingService(BangaloreTaxiDbContext db, TimeProvider clock
         x.ReturnAt, x.ReturnLocalDate, x.RequestedVehicleType.Code,
         x.RequestedVehicleType.Name, x.Status.Code, Label(x.Status.Code), x.CustomerNotes, x.CreatedAt,
         Cancellable.Contains(x.StatusId), x.StatusHistory.OrderBy(h => h.CreatedAt)
-            .Select(h => new BookingHistoryResponse(h.ToStatus.Code, Label(h.ToStatus.Code), h.CreatedAt, h.Reason)).ToList());
+            .Select(h => new BookingHistoryResponse(h.ToStatus.Code, Label(h.ToStatus.Code), h.CreatedAt, h.Reason)).ToList(),
+        x.AssignedDriverDisplayName, x.AssignedVehicleRegistration, x.AssignedVehicleTypeName);
     private static string CustomerServiceType(Booking booking) => booking.TripTypeId == ReferenceData.TripTypeCorporate
         ? "hourly" : booking.TripType.Code;
     private static string? CustomerAirportJourney(Booking booking) => booking.TripTypeId != ReferenceData.TripTypeAirport

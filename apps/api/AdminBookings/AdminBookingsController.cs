@@ -28,6 +28,11 @@ public sealed class AdminBookingsController(AdminBookingService bookings) : Cont
     public Task<AdminBookingDetails> Reject(Guid id, [FromBody] RejectBookingRequest request, CancellationToken cancellationToken) =>
         bookings.RejectAsync(UserId(), id, request.Reason, HttpContext.Connection.RemoteIpAddress, cancellationToken);
 
+    [HttpPost("{id:guid}/assignment"), EnableRateLimiting("admin-write")]
+    public Task<AdminBookingDetails> Assign(Guid id, [FromBody] AssignBookingRequest request, CancellationToken cancellationToken) =>
+        bookings.AssignAsync(UserId(), id, request.DriverId, request.VehicleId,
+            HttpContext.Connection.RemoteIpAddress, cancellationToken);
+
     private Guid UserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");

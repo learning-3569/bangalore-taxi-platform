@@ -1,5 +1,11 @@
 # Backend architecture
 
+## Phase 8 assignment boundary
+
+`AdminFleetController` exposes bounded admin-only driver and vehicle candidate DTOs. `AdminBookingService` remains the authoritative assignment boundary: it re-reads persisted eligibility and exact requested vehicle type, locks the chosen resources in a transaction, computes the existing assignment range from operational settings, and atomically writes booking snapshots, `accepted → driver_assigned`, history, and audit data. PostgreSQL driver and vehicle exclusion constraints remain the final overlap guard; their failures are translated to safe `409` responses. Initial assignment only is supported.
+
+The same admin fleet boundary now owns operational CRUD and roster tagging. Driver creation atomically creates `users`, `user_role(driver)`, and `driver`; the browser never selects a role. Driver numbers come from a PostgreSQL sequence, and driver/vehicle updates use `xmin`. Deactivation is reversible and preserves history. Roster changes close current temporal rows and insert replacements in one transaction, while booking snapshots remain immutable.
+
 ## Application
 
 `apps/api` is an ASP.NET Core 8 Web API (`BangaloreTaxi.Api`). It is a modular monolith: one process, one PostgreSQL database, one deployable API. See [ADR-001](../decisions/ADR-001-modular-monolith.md).

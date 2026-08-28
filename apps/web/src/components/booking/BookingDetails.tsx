@@ -35,6 +35,7 @@ export function BookingDetails({ id }: { id: string }) {
       {booking.customerNotes ? <div><dt className="text-ink-muted">Notes</dt><dd>{booking.customerNotes}</dd></div> : null}
       <div><dt className="text-ink-muted">Request created</dt><dd>{new Date(booking.createdAt).toLocaleString("en-IN")}</dd></div>
     </dl>
+    {booking.status === "driver_assigned" ? <section className="mt-6 border-t border-line pt-5"><h2 className="font-display text-lg font-semibold">Assigned for your trip</h2><dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2"><div><dt className="text-ink-muted">Driver</dt><dd>{booking.assignedDriverName ?? "Assigned"}</dd></div><div><dt className="text-ink-muted">Vehicle</dt><dd>{[booking.assignedVehicleTypeName, booking.assignedVehicleRegistration].filter(Boolean).join(" · ")}</dd></div></dl><p className="mt-3 text-sm text-ink-muted">The driver and vehicle are assigned. This does not mean the driver is en route yet.</p></section> : null}
     <h2 className="mt-6 font-display text-lg font-semibold">Status history</h2>
     <ol className="mt-2 grid gap-2">{booking.history.map((entry, index) => <li key={`${entry.createdAt}-${index}`} className="border-l-2 border-taxi pl-3"><strong>{entry.statusLabel}</strong><p className="text-xs text-ink-muted">{new Date(entry.createdAt).toLocaleString("en-IN")}{entry.reason ? ` · ${entry.reason}` : ""}</p></li>)}</ol>
     {error ? <p role="alert" className="mt-3 text-sm text-red-700">{error}</p> : null}

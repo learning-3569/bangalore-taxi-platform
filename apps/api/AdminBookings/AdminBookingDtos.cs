@@ -19,10 +19,17 @@ public sealed record AdminBookingDetails(
     string PickupTimezone, DateOnly PickupLocalDate, DateTimeOffset? ReturnAt, DateOnly? ReturnLocalDate,
     string VehicleType, string VehicleTypeName, string ContactName, string ContactMobile,
     string? ContactEmail, string? CustomerNotes, DateTimeOffset CreatedAt, bool CanAccept,
-    bool CanReject, IReadOnlyList<AdminBookingHistory> History);
+    bool CanReject, bool CanAssign, string? AssignedDriverName, string? AssignedVehicleRegistration,
+    string? AssignedVehicleTypeName, IReadOnlyList<AdminBookingHistory> History);
 
 public sealed class RejectBookingRequest
 {
     [Required, StringLength(300, MinimumLength = 3)]
     public string Reason { get; init; } = "";
+}
+
+public sealed class AssignBookingRequest
+{
+    public Guid DriverId { get; init; }
+    public Guid VehicleId { get; init; }
 }

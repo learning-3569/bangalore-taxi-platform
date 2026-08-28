@@ -107,6 +107,11 @@ describe("customer booking pages", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true); const user = userEvent.setup(); render(<BookingDetails id={booking.id} />); await screen.findByText("BLR-2026-000001"); await user.click(screen.getByRole("button", { name: /cancel request/i }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Cancellation unavailable"); expect(screen.getByRole("button", { name: /cancel request/i })).toBeEnabled();
   });
+  it("shows only customer-safe assignment details after assignment", async () => {
+    authenticatedFetch.mockResolvedValueOnce(new Response(JSON.stringify({ ...booking, status: "driver_assigned", statusLabel: "Driver assigned", canCancel: false, assignedDriverName: "Asha", assignedVehicleRegistration: "KA01AA1001", assignedVehicleTypeName: "Sedan" })));
+    render(<BookingDetails id={booking.id} />); expect(await screen.findByText("Asha")).toBeInTheDocument(); expect(screen.getByText("Sedan · KA01AA1001")).toBeInTheDocument();
+    expect(screen.queryByText("+919800000001")).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: /cancel request/i })).not.toBeInTheDocument(); expect(screen.getByText(/does not mean the driver is en route/i)).toBeInTheDocument();
+  });
   it("marks account booking pages noindex", () => {
     expect(listMetadata.robots).toEqual({ index: false, follow: false }); expect(detailMetadata.robots).toEqual({ index: false, follow: false });
   });

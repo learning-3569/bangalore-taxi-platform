@@ -2,7 +2,7 @@
 
 Advance taxi booking for a Bangalore fleet of about 20 cars. Customers discover the service through Google search, request trips in advance, and receive confirmation with driver details after an administrator accepts the request and assigns a vehicle.
 
-**Current Phase: Phase 7 — Admin Booking Operations**
+**Current Phase: Phase 8 — Driver & Vehicle Assignment**
 
 This repository is a production product developed incrementally. Do not implement later phases unless explicitly requested.
 
@@ -64,7 +64,7 @@ scripts/          Local helper scripts
 | 5 | Booking Engine |
 | 6 | Pricing Engine |
 | 7 | Admin Portal |
-| 8 | Driver & Vehicle Management |
+| 8 | Driver & Vehicle Assignment (complete) |
 | 9 | Notifications |
 | 10 | Google Maps Integration |
 | 11 | SEO CMS & Landing Pages |
@@ -195,6 +195,12 @@ Then open http://127.0.0.1:43130/health/live and http://127.0.0.1:43130/swagger
 
 Customer auth, booking/pricing/fleet APIs, notifications, Maps, SEO CMS, payment, or frontend work.
 
+## What Phase 8 includes
+
+Admin-only, bounded driver and vehicle management APIs; immutable sequence-generated driver numbers; reversible fleet deactivation; temporal driver/vehicle roster management; an atomic accepted-to-driver-assigned transition; persisted assignment snapshots and time windows; PostgreSQL-enforced driver and vehicle overlap protection; audit/history records; fleet and assignment workflows in `apps/admin`; and customer-safe assigned driver/vehicle details in `apps/web`.
+
+Eligibility requires an active user and employed, available driver, plus an active vehicle and vehicle type. Vehicle compatibility is exact requested type because no upgrade/substitution matrix exists. Reassignment, unassignment, dispatch/en-route transitions, notifications, pricing, payments, Maps, and fleet CRUD remain outside Phase 8.
+
 ## Next recommended phase
 
-Await an explicit request. Do **not** start customer authentication, the booking engine, admin, or payment automatically.
+Await an explicit request. Do **not** start Phase 9 automatically.

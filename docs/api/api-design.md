@@ -1,6 +1,6 @@
 # API design
 
-Phase 7 adds authorized admin booking operations to the authenticated customer resources from Phase 6.
+Phase 8 extends authorized admin booking operations with fleet candidate reads and atomic booking assignment.
 
 ## Style
 
@@ -106,13 +106,29 @@ GET    /api/v1/admin/bookings?status=pending&page=1&pageSize=25
 GET    /api/v1/admin/bookings/{id}
 POST   /api/v1/admin/bookings/{id}/accept
 POST   /api/v1/admin/bookings/{id}/reject   { "reason": "3-300 characters" }
+POST   /api/v1/admin/bookings/{id}/assignment { "driverId": "uuid", "vehicleId": "uuid" }
+GET    /api/v1/admin/drivers?eligibleOnly=true&page=1&pageSize=25
+GET    /api/v1/admin/vehicles?eligibleOnly=true&vehicleType=sedan&page=1&pageSize=25
+GET    /api/v1/admin/drivers/{id}
+POST   /api/v1/admin/drivers
+PUT    /api/v1/admin/drivers/{id}
+POST   /api/v1/admin/drivers/{id}/deactivate
+POST   /api/v1/admin/drivers/{id}/reactivate
+POST   /api/v1/admin/drivers/{id}/vehicle
+GET    /api/v1/admin/vehicles/types
+GET    /api/v1/admin/vehicles/{id}
+POST   /api/v1/admin/vehicles
+PUT    /api/v1/admin/vehicles/{id}
+POST   /api/v1/admin/vehicles/{id}/deactivate
+POST   /api/v1/admin/vehicles/{id}/reactivate
+POST   /api/v1/admin/vehicles/{id}/driver
 ```
 
-All endpoints require the persisted `admin` role through the validated JWT. Listing defaults to pending, caps page size at 100, and orders by pickup time, request time, then booking ID. Accept and reject support only `pending` transitions. Driver assignment remains unimplemented.
+All endpoints require the persisted `admin` role through the validated JWT. Lists cap page size at 100 and use deterministic ordering. Accept and reject support only `pending` transitions. Assignment supports only an unassigned `accepted` booking, revalidates persisted eligibility and exact vehicle type, computes the protected assignment window, then writes snapshots, status history, and audit data atomically. A stale booking or driver/vehicle overlap returns a safe `409` without database details.
+
+Fleet writes are admin-only and audited. Driver creation atomically creates the user, normalized E.164 phone, immutable server-generated driver number, driver role, and driver profile. Updates carry the PostgreSQL `xmin` version. Deactivate/reactivate is used instead of hard delete, and unsafe deactivation with an operational booking assignment returns `409`. Driver/vehicle tagging updates the temporal `driver_vehicle_assignment` roster transactionally and preserves closed history. The roster relationship remains distinct from booking-level assignment.
 
 ```text
-GET    /api/v1/drivers
-GET    /api/v1/vehicles
 GET    /api/v1/pricing
 ```
 

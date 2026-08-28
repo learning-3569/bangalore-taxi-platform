@@ -37,4 +37,7 @@ public sealed record BookingResponse(
     string? CustomerNotes,
     DateTimeOffset CreatedAt,
     bool CanCancel,
-    IReadOnlyList<BookingHistoryResponse> History);
+    IReadOnlyList<BookingHistoryResponse> History,
+    string? AssignedDriverName,
+    string? AssignedVehicleRegistration,
+    string? AssignedVehicleTypeName);

@@ -4,6 +4,7 @@ public sealed class Driver : IHasTimestamps
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+    public string DriverNumber { get; set; } = null!;
     public required string DisplayName { get; set; }
     public short EmploymentStatusId { get; set; }
     public short AvailabilityStatusId { get; set; }

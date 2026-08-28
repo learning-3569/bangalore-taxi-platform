@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         AddDatabase(builder);
         builder.Services.AddScoped<BookingService>();
         builder.Services.AddScoped<AdminBookingService>();
+        builder.Services.AddScoped<AdminFleetService>();
         AddControllersAndProblemDetails(builder);
         AddCors(builder);
         AddRateLimiting(builder);
@@ -220,8 +221,8 @@ public static class ServiceCollectionExtensions
                 Version = "v1",
                 Description =
                     "Modular monolith API for the Bangalore Taxi Booking Platform. " +
-                    "Phase 7 provides phone/OTP authentication, customer-owned booking requests, and admin booking operations. " +
-                    "Online payment, pricing, and assignment are excluded. " +
+                    "Phase 8 provides phone/OTP authentication, customer-owned booking requests, admin booking operations, and driver/vehicle assignment. " +
+                    "Online payment and pricing are excluded. " +
                     "Future resource routes use /api/v1/{resource}."
             });
         });

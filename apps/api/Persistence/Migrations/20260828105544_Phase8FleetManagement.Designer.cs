@@ -4,6 +4,7 @@ using System.Net;
 using BangaloreTaxi.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -13,9 +14,11 @@ using NpgsqlTypes;
 namespace BangaloreTaxi.Api.Persistence.Migrations
 {
     [DbContext(typeof(BangaloreTaxiDbContext))]
-    partial class BangaloreTaxiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260828105544_Phase8FleetManagement")]
+    partial class Phase8FleetManagement
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

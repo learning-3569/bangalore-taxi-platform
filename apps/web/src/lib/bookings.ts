@@ -4,6 +4,7 @@ export type Booking = {
   pickupLocalDate: string; serviceType: string; airportJourneyType?: string | null; returnAt?: string | null;
   returnLocalDate?: string | null; vehicleType: string; vehicleTypeName: string; status: string;
   statusLabel: string; customerNotes?: string | null; createdAt: string; canCancel: boolean; history: BookingHistory[];
+  assignedDriverName?: string | null; assignedVehicleRegistration?: string | null; assignedVehicleTypeName?: string | null;
 };
 
 export async function problemMessage(response: Response): Promise<string> {

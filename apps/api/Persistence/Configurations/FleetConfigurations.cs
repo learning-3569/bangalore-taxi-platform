@@ -30,6 +30,7 @@ internal sealed class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
             .HasForeignKey(x => x.VehicleTypeId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Status).WithMany().HasForeignKey(x => x.StatusId).OnDelete(DeleteBehavior.Restrict);
+        builder.Property<uint>("xmin").HasColumnType("xid").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken().IsRowVersion();
     }
 }
 

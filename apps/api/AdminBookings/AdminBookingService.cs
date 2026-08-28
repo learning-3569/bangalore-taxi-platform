@@ -1,14 +1,19 @@
 using System.Net;
+using System.Data;
 using System.Text.Json;
 using BangaloreTaxi.Api.Application;
 using BangaloreTaxi.Api.Bookings;
 using BangaloreTaxi.Api.Persistence;
 using BangaloreTaxi.Api.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Npgsql;
+using NpgsqlTypes;
+using BangaloreTaxi.Api.Configuration;
 
 namespace BangaloreTaxi.Api.AdminBookings;
 
-public sealed class AdminBookingService(BangaloreTaxiDbContext db, TimeProvider clock)
+public sealed class AdminBookingService(BangaloreTaxiDbContext db, TimeProvider clock, IOptions<OperationsOptions> operations)
 {
     private const int DefaultPageSize = 25;
     private const int MaxPageSize = 100;
@@ -59,6 +64,92 @@ public sealed class AdminBookingService(BangaloreTaxiDbContext db, TimeProvider 
             "Booking request not accepted", reason, ip, ct);
     }
 
+    public async Task<AdminBookingDetails> AssignAsync(
+        Guid adminId, Guid id, Guid driverId, Guid vehicleId, IPAddress? ip, CancellationToken ct)
+    {
+        if (driverId == Guid.Empty || vehicleId == Guid.Empty)
+            throw new InvalidRequestException("Choose a driver and vehicle.");
+
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
+        try
+        {
+            var booking = await db.Bookings.SingleOrDefaultAsync(x => x.Id == id, ct)
+                ?? throw new NotFoundException("Booking was not found.");
+            if (booking.StatusId != ReferenceData.BookingStatusAccepted || booking.AssignedDriverId is not null || booking.AssignedVehicleId is not null)
+                throw new ConflictException("Only an unassigned accepted booking can be assigned.");
+
+            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM driver WHERE id = {driverId} FOR UPDATE", ct);
+            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM vehicle WHERE id = {vehicleId} FOR UPDATE", ct);
+            var driver = await db.Drivers.Include(x => x.User).SingleOrDefaultAsync(x => x.Id == driverId, ct)
+                ?? throw new InvalidRequestException("Choose a valid driver.");
+            var vehicle = await db.Vehicles.Include(x => x.VehicleType).SingleOrDefaultAsync(x => x.Id == vehicleId, ct)
+                ?? throw new InvalidRequestException("Choose a valid vehicle.");
+
+            if (driver.EmploymentStatusId != ReferenceData.DriverEmploymentActive
+                || driver.AvailabilityStatusId != ReferenceData.DriverAvailabilityAvailable
+                || driver.User.StatusId != ReferenceData.UserStatusActive || string.IsNullOrWhiteSpace(driver.User.PhoneE164))
+                throw new ConflictException("The selected driver is not currently eligible for assignment.");
+            if (vehicle.StatusId != ReferenceData.VehicleStatusActive || !vehicle.VehicleType.IsActive)
+                throw new ConflictException("The selected vehicle is not currently eligible for assignment.");
+            if (vehicle.VehicleTypeId != booking.RequestedVehicleTypeId)
+                throw new ConflictException("The selected vehicle type does not match the requested category.");
+
+            var settings = await db.OperationalSettings.Where(x => x.Key == ReferenceData.AssignmentBufferMinutesKey
+                    || x.Key == ReferenceData.DefaultTripDurationMinutesKey).ToDictionaryAsync(x => x.Key, x => x.Value, ct);
+            var bufferMinutes = Setting(settings, ReferenceData.AssignmentBufferMinutesKey, operations.Value.AssignmentBufferMinutes);
+            var durationMinutes = Setting(settings, ReferenceData.DefaultTripDurationMinutesKey, operations.Value.DefaultTripDurationMinutes);
+            var tripStart = booking.PickupAt;
+            var finalLegStart = booking.ReturnAt ?? booking.PickupAt;
+            var estimatedEnd = finalLegStart.AddMinutes(durationMinutes);
+            var lower = tripStart.AddMinutes(-bufferMinutes).UtcDateTime;
+            var upper = estimatedEnd.AddMinutes(bufferMinutes).UtcDateTime;
+
+            booking.AssignedDriverId = driver.Id;
+            booking.AssignedDriverDisplayName = driver.DisplayName;
+            booking.AssignedDriverPhoneE164 = driver.User.PhoneE164;
+            booking.AssignedVehicleId = vehicle.Id;
+            booking.AssignedVehicleRegistration = vehicle.RegistrationNumber;
+            booking.AssignedVehicleTypeCode = vehicle.VehicleType.Code;
+            booking.AssignedVehicleTypeName = vehicle.VehicleType.Name;
+            booking.EstimatedEndAt = estimatedEnd;
+            booking.AssignmentWindow = new NpgsqlRange<DateTime>(lower, true, upper, false);
+            booking.StatusId = ReferenceData.BookingStatusDriverAssigned;
+
+            var now = clock.GetUtcNow();
+            db.BookingStatusHistories.Add(new BookingStatusHistory
+            {
+                BookingId = booking.Id, FromStatusId = ReferenceData.BookingStatusAccepted,
+                ToStatusId = ReferenceData.BookingStatusDriverAssigned, ChangedByUserId = adminId,
+                Reason = "Driver and vehicle assigned", CreatedAt = now
+            });
+            db.AuditLogs.Add(new AuditLog
+            {
+                ActorUserId = adminId, Action = "booking_assigned", EntityType = "booking", EntityId = booking.Id,
+                OldValue = JsonSerializer.Serialize(new { status = "accepted" }),
+                NewValue = JsonSerializer.Serialize(new { status = "driver_assigned", driverId, vehicleId }),
+                IpAddress = ip, CreatedAt = now
+            });
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return await GetAsync(id, ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync(ct);
+            throw new ConflictException("The booking changed. Refresh and try again.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation })
+        {
+            await transaction.RollbackAsync(ct);
+            throw new ConflictException("The driver or vehicle is already assigned during this booking window.");
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+    }
+
     private async Task<AdminBookingDetails> TransitionAsync(
         Guid adminId, Guid id, short targetStatusId, string targetCode, string customerReason,
         string? internalReason, IPAddress? ip, CancellationToken ct)
@@ -104,7 +195,10 @@ public sealed class AdminBookingService(BangaloreTaxiDbContext db, TimeProvider 
         x.PickupLocalDate, x.ReturnAt, x.ReturnLocalDate, x.RequestedVehicleType.Code,
         x.RequestedVehicleType.Name, x.ContactName, x.ContactMobileE164, x.ContactEmail,
         x.CustomerNotes, x.CreatedAt, x.StatusId == ReferenceData.BookingStatusPending,
-        x.StatusId == ReferenceData.BookingStatusPending, x.StatusHistory.OrderBy(h => h.CreatedAt)
+        x.StatusId == ReferenceData.BookingStatusPending, x.StatusId == ReferenceData.BookingStatusAccepted
+            && x.AssignedDriverId is null && x.AssignedVehicleId is null,
+        x.AssignedDriverDisplayName, x.AssignedVehicleRegistration, x.AssignedVehicleTypeName,
+        x.StatusHistory.OrderBy(h => h.CreatedAt)
             .Select(h => new AdminBookingHistory(h.FromStatus?.Code, h.ToStatus.Code,
                 BookingService.Label(h.ToStatus.Code), h.CreatedAt, h.Reason)).ToList());
 
@@ -116,4 +210,7 @@ public sealed class AdminBookingService(BangaloreTaxiDbContext db, TimeProvider 
     private static string Required(string value, int max) => string.IsNullOrWhiteSpace(value)
         ? throw new InvalidRequestException("Rejection reason is required.")
         : value.Trim().Length > max ? throw new InvalidRequestException("Rejection reason is too long.") : value.Trim();
+
+    private static int Setting(IReadOnlyDictionary<string, string> values, string key, int fallback) =>
+        values.TryGetValue(key, out var value) && int.TryParse(value, out var parsed) && parsed > 0 ? parsed : fallback;
 }

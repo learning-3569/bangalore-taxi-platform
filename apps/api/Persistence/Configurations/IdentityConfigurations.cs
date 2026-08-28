@@ -81,9 +81,13 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
     {
         builder.ToTable("driver");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.DriverNumber).HasMaxLength(10).IsRequired()
+            .HasDefaultValueSql("'DRV-' || lpad(nextval('driver_number_seq')::text, 6, '0')")
+            .ValueGeneratedOnAdd();
         builder.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
         builder.Property(x => x.LicenseNumber).HasMaxLength(32);
         builder.HasIndex(x => x.UserId).IsUnique();
+        builder.HasIndex(x => x.DriverNumber).IsUnique();
         builder.HasIndex(x => x.LicenseNumber).IsUnique().HasFilter("license_number IS NOT NULL");
         builder.HasIndex(x => new { x.EmploymentStatusId, x.AvailabilityStatusId });
         builder.HasOne(x => x.User)
@@ -98,5 +102,6 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
             .WithMany()
             .HasForeignKey(x => x.AvailabilityStatusId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.Property<uint>("xmin").HasColumnType("xid").ValueGeneratedOnAddOrUpdate().IsConcurrencyToken().IsRowVersion();
     }
 }

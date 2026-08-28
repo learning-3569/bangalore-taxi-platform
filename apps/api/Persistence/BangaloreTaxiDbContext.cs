@@ -49,6 +49,7 @@ public sealed class BangaloreTaxiDbContext : DbContext
     {
         modelBuilder.HasPostgresExtension("citext");
         modelBuilder.HasPostgresExtension("btree_gist");
+        modelBuilder.HasSequence<long>("driver_number_seq");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BangaloreTaxiDbContext).Assembly);
     }
 

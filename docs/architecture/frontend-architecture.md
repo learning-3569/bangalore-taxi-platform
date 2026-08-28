@@ -1,5 +1,11 @@
 # Frontend architecture
 
+## Phase 8 assignment UI
+
+Assignment operations live only in `apps/admin`, on the accepted booking detail page. Its BFF proxies bounded eligible-driver and exact-type vehicle queries through the established admin session flow; the API still enforces authorization and every domain rule. The customer app only renders the persisted `driver_assigned` status, driver display name, and vehicle type/registration. It never receives driver phone/account data, audit data, or admin controls.
+
+The authenticated admin shell exposes only implemented sections: Bookings, Drivers, and Vehicles. `/drivers` and `/vehicles` provide bounded searchable lists, create forms, editable details, reversible deactivation, and temporal roster tagging. All calls use the existing admin BFF/auth provider; navigation is not an authorization boundary. No fleet management is present in `apps/web`.
+
 ## Applications
 
 Two Next.js 15 App Router applications:

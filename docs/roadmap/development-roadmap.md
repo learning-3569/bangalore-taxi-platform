@@ -240,13 +240,13 @@ The original “Phase 3 — Customer Authentication” section below is **not** 
 
 ---
 
-## Phase 7 — Admin Portal
+## Phase 7 — Admin Booking Operations (implemented)
 
-**Objective:** Staff can review today's and pending bookings and transition statuses (accept, reject, confirm, cancel).
+**Objective:** Authorized staff review booking requests and transition pending requests to accepted or rejected.
 
-**Scope:** Dashboard counts, booking detail, status actions. Assignment may be placeholder until Phase 8.
+**Scope:** Paginated/filterable queue, operational booking detail, accept/reject actions, status history, audit, and concurrency conflict handling in `apps/admin` and `apps/api`.
 
-**Dependencies:** Phase 5. Admin authentication required.
+**Dependencies:** Phases 5 and 6. Existing OTP authentication and persisted roles are reused.
 
 **Backend:** Admin booking endpoints; authorization.
 
@@ -254,11 +254,11 @@ The original “Phase 3 — Customer Authentication” section below is **not** 
 
 **Database:** Audit log for admin actions.
 
-**Tests:** Forbidden for customer tokens; happy-path status transitions.
+**Tests:** Anonymous/customer authorization failures, role spoofing, pagination/filtering, details, accept/reject, history/audit, invalid and competing transitions, and admin UI states.
 
 **Acceptance criteria:** Admin can accept/reject a pending booking; public site remains unchanged in URL structure.
 
-**Out of scope:** SEO CMS, full fleet screens (Phase 8).
+**Out of scope:** Confirmation/assignment, driver and vehicle operations, notifications, pricing/payment, and SEO CMS.
 
 ---
 

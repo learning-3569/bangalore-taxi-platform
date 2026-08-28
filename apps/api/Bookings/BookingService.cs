@@ -213,7 +213,8 @@ public sealed class BookingService(BangaloreTaxiDbContext db, TimeProvider clock
                 ? AirportBookingRules.PickupJourney : AirportBookingRules.DropJourney;
     public static string Label(string code) => code switch
     {
-        "pending" => "Pending confirmation", "driver_assigned" => "Driver assigned", "driver_en_route" => "Driver en route",
+        "pending" => "Pending confirmation", "accepted" => "Accepted — awaiting assignment",
+        "rejected" => "Booking request not accepted", "driver_assigned" => "Driver assigned", "driver_en_route" => "Driver en route",
         "picked_up" => "Picked up", _ => char.ToUpperInvariant(code[0]) + code[1..].Replace('_', ' ')
     };
 }

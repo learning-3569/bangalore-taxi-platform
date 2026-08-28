@@ -47,7 +47,7 @@ Domain concepts must not take a dependency on HTTP or vendor SDKs. Persistence e
 
 ## Modules
 
-Identity/Customers (OTP in Phase 5) and customer Bookings (Phase 6) are implemented. Drivers, Vehicles, Pricing, Notifications, SEO administration, and Administration remain future operational modules.
+Identity/Customers (OTP in Phase 5), customer Bookings (Phase 6), and admin booking decisions (Phase 7) are implemented. Drivers, Vehicles, Pricing, Notifications, and SEO administration remain future operational modules.
 
 Payment is a future phase only.
 
@@ -115,7 +115,7 @@ Success bodies remain the resource JSON (no wrapper). HTTP status codes carry th
 
 ## Transactions and concurrency
 
-No global per-request transaction. Booking creation uses an explicit transaction and an atomic PostgreSQL upsert of `booking_number_sequence`; the booking and initial history commit together. Cancellation uses PostgreSQL `xmin` optimistic concurrency and appends history in the same save. The UI is not the concurrency guard.
+No global per-request transaction. Booking creation uses an explicit transaction and an atomic PostgreSQL upsert of `booking_number_sequence`; the booking and initial history commit together. Cancellation and admin accept/reject use PostgreSQL `xmin` optimistic concurrency. Each successful admin decision updates status and inserts history plus audit data in one save; competing decisions return 409 and create no partial history/audit. The UI is not the concurrency guard.
 
 ## Logging
 
@@ -137,11 +137,11 @@ Local Development: HTTP on `127.0.0.1:43130`. Production: `UseHsts` + `UseHttpsR
 
 Phone + OTP is implemented (Phase 5). See [identity-architecture.md](identity-architecture.md). Role names in the database: `customer`, `admin`, `driver`. JWT bearer on the API; refresh sessions in PostgreSQL.
 
-Audit rows are written from `AuthService` for OTP and session events, and later from admin mutations — not as a blanket EF interceptor.
+Audit rows are written from `AuthService` for OTP/session events and from `AdminBookingService` for accept/reject actions — not as a blanket EF interceptor. Rejection detail stays in the internal audit record; customer history receives the safe message “Booking request not accepted.”
 
 ## Rate limiting
 
-Built-in `AddRateLimiter`. Global fixed window per IP (default 120/minute). Named policies `auth` (10/min) and `public-write` (30/min). `auth` is applied to `/api/v1/auth/*`. Health checks disable rate limiting.
+Built-in `AddRateLimiter`. Global fixed window per IP (default 120/minute). Named policies `auth` (10/min), `public-write` (30/min), and `admin-write` (30/min per authenticated user, IP fallback). Health checks disable rate limiting.
 
 ## Request size
 

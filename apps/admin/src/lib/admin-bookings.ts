@@ -1,0 +1,6 @@
+export type AdminBookingListItem = { id: string; bookingNumber: string; status: string; statusLabel: string; pickup: string; drop: string; pickupAt: string; pickupTimezone: string; pickupLocalDate: string; vehicleType: string; vehicleTypeName: string; createdAt: string };
+export type AdminBookingPage = { items: AdminBookingListItem[]; page: number; pageSize: number; totalCount: number; totalPages: number };
+export type AdminBookingHistory = { fromStatus?: string | null; status: string; statusLabel: string; createdAt: string; reason?: string | null };
+export type AdminBookingDetails = AdminBookingListItem & { serviceType: string; airportJourneyType?: string | null; returnAt?: string | null; returnLocalDate?: string | null; contactName: string; contactMobile: string; contactEmail?: string | null; customerNotes?: string | null; canAccept: boolean; canReject: boolean; history: AdminBookingHistory[] };
+export async function problem(response: Response) { try { const body = await response.json() as { detail?: string; title?: string }; return body.detail ?? body.title ?? "The request failed."; } catch { return "The request failed."; } }
+export function localDateTime(value: string, timezone: string) { return new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: timezone }).format(new Date(value)); }

@@ -1,0 +1,4 @@
+import { NextResponse } from "next/server";
+import { apiBaseUrl } from "@/lib/server-auth";
+async function proxy(request: Request, context: { params: Promise<{ path?: string[] }> }) { const { path = [] } = await context.params; const search = new URL(request.url).search; const upstream = await fetch(`${apiBaseUrl()}/api/v1/admin/bookings${path.length ? `/${path.join("/")}` : ""}${search}`, { method: request.method, headers: { "Content-Type": "application/json", Authorization: request.headers.get("authorization") ?? "" }, body: request.method === "GET" ? undefined : await request.text(), cache: "no-store" }); const body = await upstream.text(); return new NextResponse(body || null, { status: upstream.status, headers: { "Content-Type": upstream.headers.get("content-type") ?? "application/json" } }); }
+export const GET = proxy; export const POST = proxy;

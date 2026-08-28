@@ -76,6 +76,22 @@ public sealed class AuthApiTests
         Assert.Equal(HttpStatusCode.Unauthorized, me.StatusCode);
     }
 
+    [Fact]
+    public async Task Production_does_not_expose_development_otp_peek()
+    {
+        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Production");
+            builder.UseSetting("ConnectionStrings:DefaultConnection", PostgresFixture.LocalDevelopmentConnection);
+            builder.UseSetting("Auth:Otp:Pepper", "test-only-otp-pepper-change-me-32ch");
+            builder.UseSetting("Auth:Jwt:SigningKey", "test-only-jwt-signing-key-change-32");
+            builder.UseSetting("Auth:Otp:Provider", "Unconfigured");
+        });
+        var response = await factory.CreateClient().GetAsync("/api/v1/auth/otp/dev-peek?phoneNumber=9876543210");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.DoesNotContain("otp", await response.Content.ReadAsStringAsync(), StringComparison.OrdinalIgnoreCase);
+    }
+
     [SkippableFact]
     public async Task Wrong_otp_and_reuse_are_rejected()
     {

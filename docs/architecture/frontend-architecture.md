@@ -56,9 +56,11 @@ Phase 5 provides OTP login through HttpOnly refresh cookies in the Next.js BFF. 
 - `robots` disallow all user agents.
 - Metadata robots: `noindex, nofollow`.
 - No public marketing content.
-- Future: dashboard, booking desk, customers, drivers, vehicles, pricing, SEO CMS.
+- Phase 7: `/login`, `/bookings`, and `/bookings/[id]` provide the internal booking queue and accept/reject workflow.
+- The admin app reuses phone OTP plus rotating refresh sessions through its own BFF. Refresh tokens remain HttpOnly; refresh/logout require the CSRF cookie/header pair.
+- The UI checks the returned role for safe routing and navigation, while `apps/api` remains the authorization boundary for every admin read/write.
 
-Admin auth is not implemented in Phase 0. When it is, sessions must be independent from the public site.
+Admin sign-in never accepts a requested role. Existing users receive roles from persisted identity, and a non-admin session receives an access-denied UI while the API returns 403 for operations.
 
 ## Data access
 

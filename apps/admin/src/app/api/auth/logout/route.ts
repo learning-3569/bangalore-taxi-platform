@@ -1,0 +1,4 @@
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { clearAuthCookies, proxyAuth, readRefreshToken } from "@/lib/server-auth";
+export async function POST(request: Request) { const store = await cookies(); const csrf = store.get("bt_admin_csrf")?.value; if (csrf && request.headers.get("x-csrf-token") !== csrf) return NextResponse.json({ detail: "Session is no longer valid." }, { status: 401 }); try { const upstream = await proxyAuth("/api/v1/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken: await readRefreshToken() }) }); if (!upstream.ok && upstream.status >= 500) return NextResponse.json({ detail: "Unable to log out." }, { status: 502 }); } catch { return NextResponse.json({ detail: "Unable to log out." }, { status: 502 }); } await clearAuthCookies(); return new NextResponse(null, { status: 204 }); }

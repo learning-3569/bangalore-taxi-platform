@@ -1,6 +1,6 @@
 # API design
 
-Phase 6 adds authenticated customer booking resources to the Phase 2 HTTP kernel.
+Phase 7 adds authorized admin booking operations to the authenticated customer resources from Phase 6.
 
 ## Style
 
@@ -99,7 +99,16 @@ GET    /api/v1/bookings/{id}
 POST   /api/v1/bookings/{id}/cancel
 ```
 
-Future admin-only endpoints (not implemented): accept, reject, and assign-driver.
+## Admin booking endpoints (Phase 7)
+
+```text
+GET    /api/v1/admin/bookings?status=pending&page=1&pageSize=25
+GET    /api/v1/admin/bookings/{id}
+POST   /api/v1/admin/bookings/{id}/accept
+POST   /api/v1/admin/bookings/{id}/reject   { "reason": "3-300 characters" }
+```
+
+All endpoints require the persisted `admin` role through the validated JWT. Listing defaults to pending, caps page size at 100, and orders by pickup time, request time, then booking ID. Accept and reject support only `pending` transitions. Driver assignment remains unimplemented.
 
 ```text
 GET    /api/v1/drivers
@@ -132,4 +141,4 @@ Booking creation requires a 16–64 character `Idempotency-Key`. It is unique pe
 
 ## Rate limiting
 
-Global per-IP window. `[EnableRateLimiting("auth")]` is applied to `/api/v1/auth/*`. `[EnableRateLimiting("public-write")]` is applied to booking creation and cancellation.
+Global per-IP window. `[EnableRateLimiting("auth")]` is applied to `/api/v1/auth/*`. `[EnableRateLimiting("public-write")]` is applied to booking creation and cancellation. Admin mutations use `admin-write` (30/minute, partitioned by authenticated user ID with IP fallback).

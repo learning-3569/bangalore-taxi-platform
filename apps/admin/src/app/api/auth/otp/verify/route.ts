@@ -1,0 +1,3 @@
+import { NextResponse } from "next/server";
+import { newCsrfToken, proxyAuth, setAuthCookies } from "@/lib/server-auth";
+export async function POST(request: Request) { const upstream = await proxyAuth("/api/v1/auth/otp/verify", { method: "POST", body: await request.text() }); const json = await upstream.json() as { accessToken?: string; accessTokenExpiresAt?: string; refreshToken?: string; user?: unknown }; if (!upstream.ok) return NextResponse.json(json, { status: upstream.status }); if (json.refreshToken) await setAuthCookies(json.refreshToken, newCsrfToken()); return NextResponse.json({ accessToken: json.accessToken, accessTokenExpiresAt: json.accessTokenExpiresAt, user: json.user }); }

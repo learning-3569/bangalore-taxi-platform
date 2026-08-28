@@ -1,6 +1,6 @@
 # Admin portal (`apps/admin`)
 
-Internal Next.js App Router application. This origin must remain non-indexable.
+Internal Next.js App Router application. This origin remains non-indexable and provides the Phase 7 booking operations queue at `/bookings`. Admins use the shared phone OTP flow; the API's persisted `admin` role is the authorization boundary.
 
 ```bash
 npm install

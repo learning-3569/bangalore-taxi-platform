@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using BangaloreTaxi.Api.Configuration;
 using BangaloreTaxi.Api.Persistence;
 using BangaloreTaxi.Api.Bookings;
+using BangaloreTaxi.Api.AdminBookings;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -36,6 +37,7 @@ public static class ServiceCollectionExtensions
         builder.AddPhoneOtpAuthentication();
         AddDatabase(builder);
         builder.Services.AddScoped<BookingService>();
+        builder.Services.AddScoped<AdminBookingService>();
         AddControllersAndProblemDetails(builder);
         AddCors(builder);
         AddRateLimiting(builder);
@@ -171,6 +173,18 @@ public static class ServiceCollectionExtensions
                 });
             });
 
+            options.AddPolicy("admin-write", httpContext =>
+            {
+                var key = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                    ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 30,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+            });
+
             options.OnRejected = async (context, cancellationToken) =>
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
@@ -206,8 +220,8 @@ public static class ServiceCollectionExtensions
                 Version = "v1",
                 Description =
                     "Modular monolith API for the Bangalore Taxi Booking Platform. " +
-                    "Phase 6 provides phone/OTP authentication and customer-owned booking requests. " +
-                    "Online payment, pricing, assignment, and admin operations are excluded. " +
+                    "Phase 7 provides phone/OTP authentication, customer-owned booking requests, and admin booking operations. " +
+                    "Online payment, pricing, and assignment are excluded. " +
                     "Future resource routes use /api/v1/{resource}."
             });
         });

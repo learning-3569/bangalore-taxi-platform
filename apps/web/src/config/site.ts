@@ -56,10 +56,10 @@ export const legalPages = [
 export const legalAndHomePaths = ["/", "/privacy-policy", "/terms-and-conditions"] as const;
 
 export const tripTypes = [
-  { value: "one-way", label: "One Way" },
-  { value: "round-trip", label: "Round Trip" },
   { value: "airport", label: "Airport Transfer" },
-  { value: "local", label: "Local Ride" },
+  { value: "outstation", label: "Outstation" },
+  { value: "hourly", label: "Hourly" },
+  { value: "local", label: "Local" },
 ] as const;
 
 export const vehicleTypes = [

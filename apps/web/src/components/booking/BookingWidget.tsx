@@ -7,14 +7,15 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { SelectField, TextField } from "@/components/ui/Fields";
 import { tripTypes, vehicleTypes } from "@/config/site";
-import type { TripTypeValue } from "@/content/seo/types";
+import { BENGALURU_AIRPORT, type AirportJourneyType, type BookingServiceType } from "@/lib/airport-booking";
 import { loginHref } from "@/lib/booking-intent";
 import { problemMessage, type Booking } from "@/lib/bookings";
 
 type BookingWidgetProps = {
   defaultPickup?: string;
   defaultDrop?: string;
-  defaultTripType?: TripTypeValue;
+  defaultServiceType?: BookingServiceType;
+  defaultAirportJourneyType?: AirportJourneyType;
   heading?: string;
   submitLabel?: string;
   idPrefix?: string;
@@ -27,7 +28,8 @@ export function BookingWidget(props: BookingWidgetProps) {
 function BookingWidgetContent({
   defaultPickup,
   defaultDrop,
-  defaultTripType = "airport",
+  defaultServiceType = "airport",
+  defaultAirportJourneyType = "drop",
   heading = "Book your cab",
   submitLabel = "Book now",
   idPrefix = "",
@@ -36,14 +38,18 @@ function BookingWidgetContent({
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
-  const restoredTrip = search.get("tripType") as TripTypeValue | null;
-  const initialTrip = restoredTrip && tripTypes.some(x => x.value === restoredTrip) ? restoredTrip : defaultTripType;
-  const [trip, setTrip] = useState<TripTypeValue>(initialTrip);
-  const [drop, setDrop] = useState(
-    initialTrip === "airport" && !defaultDrop
-      ? "Kempegowda International Airport Bengaluru"
-      : search.get("drop") ?? defaultDrop ?? "",
-  );
+  const restoredService = search.get("serviceType") as BookingServiceType | null;
+  const initialService = restoredService && tripTypes.some(x => x.value === restoredService) ? restoredService : defaultServiceType;
+  const restoredJourney = search.get("airportJourneyType") as AirportJourneyType | null;
+  const initialJourney = restoredJourney && ["pickup", "drop", "round-trip"].includes(restoredJourney) ? restoredJourney : defaultAirportJourneyType;
+  const initialPickup = initialService === "airport" && initialJourney === "pickup" ? BENGALURU_AIRPORT : search.get("pickup") ?? defaultPickup ?? "";
+  const initialDrop = initialService === "airport" && initialJourney !== "pickup" ? BENGALURU_AIRPORT : search.get("drop") ?? defaultDrop ?? "";
+  const [serviceType, setServiceType] = useState<BookingServiceType>(initialService);
+  const [airportJourney, setAirportJourney] = useState<AirportJourneyType>(initialJourney);
+  const [pickup, setPickup] = useState(initialPickup);
+  const [drop, setDrop] = useState(initialDrop);
+  const editablePickup = useRef(initialService === "airport" && initialJourney === "pickup" ? "" : initialPickup);
+  const editableDrop = useRef(initialService === "airport" && initialJourney !== "pickup" ? "" : initialDrop);
   const [created, setCreated] = useState<Booking | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -59,10 +65,13 @@ function BookingWidgetContent({
           next: pathname || "/",
           pickup: String(form.get("pickup") ?? ""),
           drop: String(form.get("drop") ?? ""),
-          tripType: trip,
+          serviceType,
+          airportJourneyType: serviceType === "airport" ? airportJourney : undefined,
           travelDate: String(form.get("travelDate") ?? ""),
           pickupTime: String(form.get("pickupTime") ?? ""),
           vehicleType: String(form.get("vehicleType") ?? ""),
+          returnDate: String(form.get("returnDate") ?? ""),
+          returnTime: String(form.get("returnTime") ?? ""),
         }),
       );
       return;
@@ -76,8 +85,10 @@ function BookingWidgetContent({
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
         body: JSON.stringify({
-          pickup: form.get("pickup"), drop: form.get("drop"), tripType: trip,
+          pickup: form.get("pickup"), drop: form.get("drop"), serviceType,
+          airportJourneyType: serviceType === "airport" ? airportJourney : null,
           travelDate: form.get("travelDate"), pickupTime: form.get("pickupTime"), vehicleType: form.get("vehicleType"),
+          returnDate: form.get("returnDate"), returnTime: form.get("returnTime"),
         }),
       });
       if (!response.ok) throw new Error(await problemMessage(response));
@@ -106,7 +117,7 @@ function BookingWidgetContent({
 
       <div role="tablist" aria-label="Trip type" className="mt-4 grid grid-cols-2 gap-1 bg-paper-soft p-1 sm:grid-cols-4">
         {tripTypes.map((option) => {
-          const active = trip === option.value;
+          const active = serviceType === option.value;
           return (
             <button
               key={option.value}
@@ -117,12 +128,11 @@ function BookingWidgetContent({
                 active ? "bg-navy text-white" : "text-ink-muted hover:text-navy"
               }`}
               onClick={() => {
-                setTrip(option.value);
-                if (option.value === "airport" && !defaultDrop) {
-                  setDrop("Kempegowda International Airport Bengaluru");
-                } else if (drop === "Kempegowda International Airport Bengaluru") {
-                  setDrop(defaultDrop ?? "");
-                }
+                if (pickup !== BENGALURU_AIRPORT) editablePickup.current = pickup;
+                if (drop !== BENGALURU_AIRPORT) editableDrop.current = drop;
+                setServiceType(option.value);
+                setPickup(option.value === "airport" && airportJourney === "pickup" ? BENGALURU_AIRPORT : editablePickup.current);
+                setDrop(option.value === "airport" && airportJourney !== "pickup" ? BENGALURU_AIRPORT : editableDrop.current);
               }}
             >
               {option.label}
@@ -130,7 +140,29 @@ function BookingWidgetContent({
           );
         })}
       </div>
-      <input type="hidden" name="tripType" value={trip} />
+      <input type="hidden" name="serviceType" value={serviceType} />
+
+      {serviceType === "airport" ? (
+        <div role="group" aria-label="Airport journey" className="mt-3 inline-grid w-full grid-cols-3 gap-1 rounded-md border border-line bg-paper p-1 sm:w-auto sm:min-w-80">
+          {(["pickup", "drop", "round-trip"] as const).map((journey) => (
+            <button
+              key={journey}
+              type="button"
+              aria-pressed={airportJourney === journey}
+              className={`rounded-sm px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${airportJourney === journey ? "bg-navy text-white" : "text-navy hover:bg-paper-soft"}`}
+              onClick={() => {
+                if (pickup !== BENGALURU_AIRPORT) editablePickup.current = pickup;
+                if (drop !== BENGALURU_AIRPORT) editableDrop.current = drop;
+                setAirportJourney(journey);
+                setPickup(journey === "pickup" ? BENGALURU_AIRPORT : editablePickup.current);
+                setDrop(journey === "pickup" ? editableDrop.current : BENGALURU_AIRPORT);
+              }}
+            >
+              {journey === "round-trip" ? "Round Trip" : journey === "pickup" ? "Pickup" : "Drop"}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-5">
         <TextField
@@ -140,7 +172,10 @@ function BookingWidgetContent({
           placeholder="Enter pickup location"
           autoComplete="street-address"
           required
-          defaultValue={search.get("pickup") ?? defaultPickup}
+          value={pickup}
+          readOnly={serviceType === "airport" && airportJourney === "pickup"}
+          aria-readonly={serviceType === "airport" && airportJourney === "pickup"}
+          onChange={(event) => { setPickup(event.target.value); editablePickup.current = event.target.value; }}
         />
         <TextField
           id={`${idPrefix}drop`}
@@ -150,9 +185,9 @@ function BookingWidgetContent({
           autoComplete="street-address"
           required
           value={drop}
-          readOnly={trip === "airport" && !defaultDrop}
-          aria-readonly={trip === "airport" && !defaultDrop}
-          onChange={(event) => setDrop(event.target.value)}
+          readOnly={serviceType === "airport" && airportJourney !== "pickup"}
+          aria-readonly={serviceType === "airport" && airportJourney !== "pickup"}
+          onChange={(event) => { setDrop(event.target.value); editableDrop.current = event.target.value; }}
         />
         <TextField id={`${idPrefix}date`} name="travelDate" label="Travel date" type="date" min={minDate} required defaultValue={search.get("travelDate") ?? undefined} />
         <TextField id={`${idPrefix}time`} name="pickupTime" label="Pickup time" type="time" required defaultValue={search.get("pickupTime") ?? undefined} />
@@ -163,6 +198,12 @@ function BookingWidgetContent({
             </option>
           ))}
         </SelectField>
+        {serviceType === "airport" && airportJourney === "round-trip" ? (
+          <>
+            <TextField id={`${idPrefix}returnDate`} name="returnDate" label="Return date" type="date" min={minDate} required defaultValue={search.get("returnDate") ?? undefined} />
+            <TextField id={`${idPrefix}returnTime`} name="returnTime" label="Return time" type="time" required defaultValue={search.get("returnTime") ?? undefined} />
+          </>
+        ) : null}
       </div>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button type="submit" variant="taxi" className="uppercase sm:min-w-40" disabled={submitting} aria-busy={submitting}>

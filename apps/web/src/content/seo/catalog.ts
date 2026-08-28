@@ -5,8 +5,10 @@ import { airportToWhitefield } from "@/content/seo/routes/bangalore-airport-to-w
 import { bangaloreToCoorg } from "@/content/seo/routes/bangalore-to-coorg";
 import { bangaloreToMysore } from "@/content/seo/routes/bangalore-to-mysore";
 import { electronicCityToAirport } from "@/content/seo/routes/electronic-city-to-bangalore-airport";
+import { expandedAirportRoutes } from "@/content/seo/routes/expanded-airport-routes";
 import { koramangalaToAirport } from "@/content/seo/routes/koramangala-to-bangalore-airport";
 import { whitefieldToAirport } from "@/content/seo/routes/whitefield-to-bangalore-airport";
+import { priorityAirportRoutes } from "@/content/seo/routes/priority-airport-routes";
 import { airportTaxiService, outstationTaxiService } from "@/content/seo/services";
 import type {
   LocationContent,
@@ -26,6 +28,8 @@ export const routePages: readonly RoutePageContent[] = [
   airportToWhitefield,
   electronicCityToAirport,
   koramangalaToAirport,
+  ...priorityAirportRoutes,
+  ...expandedAirportRoutes,
   bangaloreToMysore,
   bangaloreToCoorg,
   unpublishedDemoRoute,

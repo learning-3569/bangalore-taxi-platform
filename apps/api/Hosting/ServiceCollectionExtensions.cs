@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using BangaloreTaxi.Api.Configuration;
 using BangaloreTaxi.Api.Persistence;
+using BangaloreTaxi.Api.Bookings;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -34,6 +35,7 @@ public static class ServiceCollectionExtensions
 
         builder.AddPhoneOtpAuthentication();
         AddDatabase(builder);
+        builder.Services.AddScoped<BookingService>();
         AddControllersAndProblemDetails(builder);
         AddCors(builder);
         AddRateLimiting(builder);
@@ -204,8 +206,8 @@ public static class ServiceCollectionExtensions
                 Version = "v1",
                 Description =
                     "Modular monolith API for the Bangalore Taxi Booking Platform. " +
-                    "Phase 2 provides the HTTP pipeline foundation (health, errors, CORS, logging). " +
-                    "Business modules are introduced in later phases. Online payment is excluded from V1. " +
+                    "Phase 6 provides phone/OTP authentication and customer-owned booking requests. " +
+                    "Online payment, pricing, assignment, and admin operations are excluded. " +
                     "Future resource routes use /api/v1/{resource}."
             });
         });

@@ -23,7 +23,7 @@ public sealed class HealthController : ControllerBase
         return Ok(new HealthResponse(
             Status: "ok",
             Service: "BangaloreTaxi.Api",
-            Phase: "5",
+            Phase: "6",
             UtcNow: _timeProvider.GetUtcNow()));
     }
 }

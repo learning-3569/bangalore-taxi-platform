@@ -7,6 +7,7 @@ export type LocationContent = {
   name: string;
   slug: string;
   alternateName?: string;
+  aliases?: readonly string[];
   type: LocationType;
   city: string;
   state: string;
@@ -85,6 +86,8 @@ export type RoutePageContent = {
   parentServiceId: ParentServiceId;
   faq: readonly FaqItem[];
   farePlaceholder: string;
+  /** Editorial planning only. Never rendered or copied automatically into metadata. */
+  targetQueries?: readonly string[];
 };
 
 export type ServicePageContent = {

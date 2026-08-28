@@ -176,6 +176,11 @@ namespace BangaloreTaxi.Api.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("customer_notes");
 
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("idempotency_key");
+
                     b.Property<string>("DropAddress")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -247,6 +252,14 @@ namespace BangaloreTaxi.Api.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("requested_vehicle_type_id");
 
+                    b.Property<DateTimeOffset?>("ReturnAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("return_at");
+
+                    b.Property<DateOnly?>("ReturnLocalDate")
+                        .HasColumnType("date")
+                        .HasColumnName("return_local_date");
+
                     b.Property<short>("StatusId")
                         .HasColumnType("smallint")
                         .HasColumnName("status_id");
@@ -271,6 +284,11 @@ namespace BangaloreTaxi.Api.Persistence.Migrations
                     b.HasIndex("BookingNumber")
                         .IsUnique()
                         .HasDatabaseName("ix_booking_booking_number");
+
+                    b.HasIndex("CustomerId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_booking_customer_id_idempotency_key")
+                        .HasFilter("customer_id IS NOT NULL AND idempotency_key IS NOT NULL");
 
                     b.HasIndex("JourneyTypeId")
                         .HasDatabaseName("ix_booking_journey_type_id");
@@ -321,6 +339,8 @@ namespace BangaloreTaxi.Api.Persistence.Migrations
                             t.HasCheckConstraint("ck_booking_drop_lng_range", "drop_longitude IS NULL OR (drop_longitude >= -180 AND drop_longitude <= 180)");
 
                             t.HasCheckConstraint("ck_booking_fare_currency", "estimated_fare_amount IS NULL OR currency_code IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_booking_return_complete", "(return_at IS NULL AND return_local_date IS NULL) OR (return_at IS NOT NULL AND return_local_date IS NOT NULL AND return_at > pickup_at)");
 
                             t.HasCheckConstraint("ck_booking_pickup_coords", "(pickup_latitude IS NULL AND pickup_longitude IS NULL) OR (pickup_latitude IS NOT NULL AND pickup_longitude IS NOT NULL)");
 

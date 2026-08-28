@@ -1,6 +1,6 @@
 import type { LocationContent } from "@/content/seo/types";
 
-function locality(id: string, name: string): LocationContent {
+function locality(id: string, name: string, aliases?: readonly string[]): LocationContent {
   return {
     id,
     name,
@@ -10,6 +10,7 @@ function locality(id: string, name: string): LocationContent {
     state: "Karnataka",
     country: "India",
     published: true,
+    aliases,
   };
 }
 
@@ -53,9 +54,17 @@ export const locations: readonly LocationContent[] = [
     published: true,
   },
   locality("whitefield", "Whitefield"),
-  locality("electronic-city", "Electronic City"),
+  locality("itpl", "ITPL", ["International Tech Park Bangalore", "International Tech Park Bengaluru", "ITPB"]),
+  locality("hoodi", "Hoodi", ["Hoody"]),
+  locality("kadugodi", "Kadugodi"),
+  locality("electronic-city", "Electronic City", ["E-City"]),
   locality("koramangala", "Koramangala"),
-  locality("hsr-layout", "HSR Layout"),
+  locality("hsr-layout", "HSR Layout", ["HSR"]),
+  locality("singasandra", "Singasandra"),
+  locality("bommanahalli", "Bommanahalli"),
+  locality("haralur", "Haralur"),
+  locality("kasavanahalli", "Kasavanahalli"),
+  locality("outer-ring-road", "Outer Ring Road", ["ORR"]),
   locality("marathahalli", "Marathahalli"),
   locality("indiranagar", "Indiranagar"),
   locality("jayanagar", "Jayanagar"),
@@ -64,13 +73,16 @@ export const locations: readonly LocationContent[] = [
   locality("yelahanka", "Yelahanka"),
   locality("bellandur", "Bellandur"),
   locality("sarjapur-road", "Sarjapur Road"),
-  locality("btm-layout", "BTM Layout"),
+  locality("btm-layout", "BTM Layout", ["BTM"]),
   locality("banashankari", "Banashankari"),
   locality("rajajinagar", "Rajajinagar"),
   locality("malleshwaram", "Malleshwaram"),
-  locality("kr-puram", "KR Puram"),
+  locality("kr-puram", "KR Puram", ["K R Puram", "Krishnarajapuram"]),
   locality("mahadevapura", "Mahadevapura"),
-  locality("manyata-tech-park", "Manyata Tech Park"),
+  locality("manyata-tech-park", "Manyata Tech Park", ["Manyata", "Manyata Embassy Business Park"]),
+  locality("yeshwanthpur", "Yeshwanthpur"),
+  locality("mg-road", "MG Road", ["M G Road", "Mahatma Gandhi Road"]),
+  locality("sunkadakatte", "Sunkadakatte"),
   locality("devanahalli", "Devanahalli"),
   outstation("mysore", "Mysore", "Mysuru"),
   outstation("coorg", "Coorg", "Kodagu"),

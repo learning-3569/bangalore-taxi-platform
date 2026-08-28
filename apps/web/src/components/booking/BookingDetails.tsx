@@ -30,6 +30,7 @@ export function BookingDetails({ id }: { id: string }) {
     <dl className="mt-5 grid gap-3 text-sm">
       <div><dt className="text-ink-muted">Route</dt><dd>{booking.pickup} → {booking.drop}</dd></div>
       <div><dt className="text-ink-muted">Pickup</dt><dd>{pickupDisplay(booking)}</dd></div>
+      {booking.returnAt ? <div><dt className="text-ink-muted">Return</dt><dd>{new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }).format(new Date(booking.returnAt))}</dd></div> : null}
       <div><dt className="text-ink-muted">Requested vehicle</dt><dd>{booking.vehicleTypeName}</dd></div>
       {booking.customerNotes ? <div><dt className="text-ink-muted">Notes</dt><dd>{booking.customerNotes}</dd></div> : null}
       <div><dt className="text-ink-muted">Request created</dt><dd>{new Date(booking.createdAt).toLocaleString("en-IN")}</dd></div>

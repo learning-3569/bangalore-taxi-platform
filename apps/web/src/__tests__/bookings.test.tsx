@@ -9,11 +9,12 @@ import { metadata as detailMetadata } from "@/app/account/bookings/[id]/page";
 
 const push = vi.fn(); const replace = vi.fn(); const authenticatedFetch = vi.fn();
 const router = { push, replace };
+let bookingSearch = "";
 const auth = { user: { userId: "u", phoneNumber: "+919876543210", maskedPhone: "******3210", roles: ["customer"] }, ready: true, authenticatedFetch };
-vi.mock("next/navigation", () => ({ useRouter: () => router, usePathname: () => "/airport-taxi-bangalore", useSearchParams: () => new URLSearchParams() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router, usePathname: () => "/airport-taxi-bangalore", useSearchParams: () => new URLSearchParams(bookingSearch) }));
 vi.mock("@/components/auth/AuthProvider", () => ({ useAuth: () => auth }));
 
-const booking = { id: "11111111-1111-4111-8111-111111111111", bookingNumber: "BLR-2026-000001", pickup: "MG Road", drop: "Airport", pickupAt: "2026-09-10T04:30:00Z", pickupTimezone: "Asia/Kolkata", pickupLocalDate: "2026-09-10", tripType: "airport", vehicleType: "sedan", vehicleTypeName: "Sedan", status: "pending", statusLabel: "Pending confirmation", createdAt: "2026-08-27T10:00:00Z", canCancel: true, history: [{ status: "pending", statusLabel: "Pending confirmation", createdAt: "2026-08-27T10:00:00Z", reason: "Booking request received" }] };
+const booking = { id: "11111111-1111-4111-8111-111111111111", bookingNumber: "BLR-2026-000001", pickup: "MG Road", drop: "Kempegowda International Airport (BLR)", pickupAt: "2026-09-10T04:30:00Z", pickupTimezone: "Asia/Kolkata", pickupLocalDate: "2026-09-10", serviceType: "airport", airportJourneyType: "drop", vehicleType: "sedan", vehicleTypeName: "Sedan", status: "pending", statusLabel: "Pending confirmation", createdAt: "2026-08-27T10:00:00Z", canCancel: true, history: [{ status: "pending", statusLabel: "Pending confirmation", createdAt: "2026-08-27T10:00:00Z", reason: "Booking request received" }] };
 
 async function completeForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/pickup location/i), "MG Road");
@@ -21,11 +22,56 @@ async function completeForm(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("authenticated booking", () => {
-  beforeEach(() => { authenticatedFetch.mockReset(); push.mockReset(); replace.mockReset(); auth.user = { userId: "u", phoneNumber: "+919876543210", maskedPhone: "******3210", roles: ["customer"] }; });
-  it("defaults airport transfers to Kempegowda International Airport Bengaluru", () => {
+  beforeEach(() => { bookingSearch = ""; authenticatedFetch.mockReset(); push.mockReset(); replace.mockReset(); auth.user = { userId: "u", phoneNumber: "+919876543210", maskedPhone: "******3210", roles: ["customer"] }; });
+  it("exposes Airport Transfer journey choices and defaults Drop to the canonical airport", () => {
     render(<BookingWidget />);
-    expect(screen.getByLabelText(/drop location/i)).toHaveValue("Kempegowda International Airport Bengaluru");
+    expect(screen.getByRole("tab", { name: /airport transfer/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("group", { name: /airport journey/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^pickup$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^drop$/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /round trip/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/drop location/i)).toHaveValue("Kempegowda International Airport (BLR)");
     expect(screen.getByLabelText(/drop location/i)).toHaveAttribute("readonly");
+  });
+  it("locks Airport Pickup and switches cleanly to Airport Drop", async () => {
+    const user = userEvent.setup(); render(<BookingWidget />);
+    await user.type(screen.getByLabelText(/pickup location/i), "Whitefield");
+    await user.click(screen.getByRole("button", { name: /^pickup$/i }));
+    expect(screen.getByLabelText(/pickup location/i)).toHaveValue("Kempegowda International Airport (BLR)");
+    expect(screen.getByLabelText(/pickup location/i)).toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/drop location/i)).not.toHaveAttribute("readonly");
+    await user.type(screen.getByLabelText(/drop location/i), "Whitefield");
+    await user.click(screen.getByRole("button", { name: /^drop$/i }));
+    expect(screen.getByLabelText(/pickup location/i)).toHaveValue("Whitefield");
+    expect(screen.getByLabelText(/pickup location/i)).not.toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/drop location/i)).toHaveValue("Kempegowda International Airport (BLR)");
+  });
+  it("shows return controls only for Airport Round Trip", async () => {
+    const user = userEvent.setup(); render(<BookingWidget />);
+    expect(screen.queryByLabelText(/return date/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /round trip/i }));
+    expect(screen.getByLabelText(/return date/i)).toBeRequired();
+    expect(screen.getByLabelText(/return time/i)).toBeRequired();
+  });
+  it("restores editable Local fields after Airport Drop", async () => {
+    const user = userEvent.setup(); render(<BookingWidget />);
+    await user.type(screen.getByLabelText(/pickup location/i), "Whitefield");
+    await user.click(screen.getByRole("tab", { name: /^local$/i }));
+    expect(screen.getByLabelText(/pickup location/i)).not.toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/drop location/i)).not.toHaveAttribute("readonly");
+    await user.type(screen.getByLabelText(/drop location/i), "Koramangala");
+    expect(screen.getByLabelText(/drop location/i)).toHaveValue("Koramangala");
+  });
+  it("normalizes restored Airport Pickup intent and preserves date, time, and vehicle", () => {
+    bookingSearch = "serviceType=airport&airportJourneyType=pickup&pickup=Whitefield&drop=Indiranagar&travelDate=2026-09-10&pickupTime=10%3A30&vehicleType=suv";
+    render(<BookingWidget />);
+    expect(screen.getByRole("tab", { name: /airport transfer/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: /^pickup$/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText(/pickup location/i)).toHaveValue("Kempegowda International Airport (BLR)");
+    expect(screen.getByLabelText(/drop location/i)).toHaveValue("Indiranagar");
+    expect(screen.getByLabelText(/travel date/i)).toHaveValue("2026-09-10");
+    expect(screen.getByLabelText(/pickup time/i)).toHaveValue("10:30");
+    expect(screen.getByLabelText(/vehicle type/i)).toHaveValue("suv");
   });
   it("redirects unauthenticated customers with every intent field", async () => {
     auth.user = null as never; const user = userEvent.setup(); render(<BookingWidget />); await completeForm(user); await user.click(screen.getByRole("button", { name: /book now/i }));

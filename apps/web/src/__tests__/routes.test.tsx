@@ -33,7 +33,7 @@ import { createPageMetadata } from "@/lib/seo";
 
 describe("route catalog", () => {
   it("publishes demonstration routes and keeps drafts unpublished", () => {
-    expect(getIndexableRoutes()).toHaveLength(6);
+    expect(getIndexableRoutes()).toHaveLength(33);
     expect(getPublishedRoutes().some((page) => page.slug === "review-only-demo-route")).toBe(false);
     expect(getIndexableRoutes().some((page) => page.slug === "review-only-demo-route")).toBe(false);
     expect(getPublishedRoute("unpublished-demo-route")).toBeUndefined();
@@ -41,6 +41,50 @@ describe("route catalog", () => {
     expect(getRouteBySlug("unpublished-demo-route")?.published).toBe(false);
     expect(getRouteBySlug("review-only-demo-route")?.published).toBe(false);
     expect(getRouteBySlug("review-only-demo-route")?.indexable).toBe(false);
+  });
+
+  it("publishes exactly one canonical outbound route for all thirty curated airport localities", () => {
+    const slugs = [
+      "whitefield", "itpl", "hoodi", "kadugodi", "electronic-city", "hsr-layout",
+      "singasandra", "bommanahalli", "bellandur", "sarjapur-road", "haralur",
+      "kasavanahalli", "outer-ring-road", "marathahalli", "indiranagar", "koramangala",
+      "jp-nagar", "jayanagar", "banashankari", "rajajinagar", "malleshwaram",
+      "yeshwanthpur", "hebbal", "yelahanka", "manyata-tech-park", "kr-puram",
+      "mahadevapura", "btm-layout", "mg-road", "sunkadakatte",
+    ].map((locality) => `${locality}-to-bangalore-airport-taxi`);
+    expect(slugs.map(getPublishedRoute).every(Boolean)).toBe(true);
+    expect(slugs.every((slug) => getPublishedRoute(slug)?.direction === "to-airport")).toBe(true);
+    expect(new Set(routePages.map((route) => route.slug)).size).toBe(routePages.length);
+    expect(getPublishedRoute("bangalore-airport-to-whitefield-taxi")?.direction).toBe("from-airport");
+    expect(getPublishedRoute("bangalore-airport-to-electronic-city-taxi")?.direction).toBe("from-airport");
+  });
+
+  it("keeps editorial aliases and target queries off the URL surface", () => {
+    expect(locations.find((item) => item.id === "hsr-layout")?.aliases).toContain("HSR");
+    expect(locations.find((item) => item.id === "manyata-tech-park")?.aliases).toContain("Manyata Embassy Business Park");
+    expect(getRouteBySlug("hsr-to-airport-cab")).toBeUndefined();
+    expect(getRouteBySlug("manyata-embassy-business-park-to-airport-taxi")).toBeUndefined();
+    expect(getRouteBySlug("hoody-to-bangalore-airport-taxi")).toBeUndefined();
+    expect(getRouteBySlug("btm-to-bangalore-airport-cab")).toBeUndefined();
+    expect(getRouteBySlug("krishnarajapuram-to-airport-taxi")).toBeUndefined();
+    expect(getRouteBySlug("mg-road-to-bangalore-airport-cab")).toBeUndefined();
+    const route = getPublishedRoute("bangalore-airport-to-electronic-city-taxi")!;
+    const { container } = render(<AuthProvider><RouteLandingPage route={route} /></AuthProvider>);
+    expect(container).not.toHaveTextContent("airport to e-city cab");
+  });
+
+  it("keeps auditor language out of expanded route FAQs and ORR out of the index", () => {
+    const expanded = [
+      "itpl", "hoodi", "kadugodi", "singasandra", "bommanahalli", "haralur",
+      "kasavanahalli", "outer-ring-road", "indiranagar", "jp-nagar", "jayanagar",
+      "banashankari", "rajajinagar", "malleshwaram", "yeshwanthpur", "kr-puram",
+      "mahadevapura", "btm-layout", "mg-road", "sunkadakatte",
+    ].map((locality) => getPublishedRoute(`${locality}-to-bangalore-airport-taxi`)!);
+    const visibleFaqs = expanded.flatMap((route) => route.faq.flatMap((item) => [item.question, item.answer])).join(" ");
+
+    expect(expanded.every((route) => route.faq.length >= 2)).toBe(true);
+    expect(visibleFaqs).not.toMatch(/canonical|duplicate URL|generated from a URL|route pages?/i);
+    expect(getPublishedRoute("outer-ring-road-to-bangalore-airport-taxi")?.indexable).toBe(false);
   });
 
   it("does not generate the review fixture in production static params", () => {
@@ -75,6 +119,16 @@ describe("route catalog", () => {
     const titles = getIndexableRoutes().map((page) => page.seoTitle);
     expect(new Set(h1s).size).toBe(h1s.length);
     expect(new Set(titles).size).toBe(titles.length);
+  });
+
+  it("keeps every curated airport route directional with the canonical BLR value", () => {
+    const airportRoutes = getIndexableRoutes().filter((page) => page.routeType === "airport");
+    expect(airportRoutes).toHaveLength(31);
+    for (const page of airportRoutes) {
+      const outbound = page.direction === "to-airport";
+      expect(page.summary.from).toBe(outbound ? locations.find((location) => location.id === page.originId)?.name : "Kempegowda International Airport (BLR)");
+      expect(page.summary.to).toBe(outbound ? "Kempegowda International Airport (BLR)" : locations.find((location) => location.id === page.destinationId)?.name);
+    }
   });
 
   it("does not invent fares or numeric travel times in the summary", () => {
@@ -192,12 +246,14 @@ describe("route landing pages", () => {
     expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Airport taxi" })).toHaveAttribute("href", "/airport-taxi-bangalore");
     expect(screen.getByDisplayValue("Whitefield")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Bangalore Airport")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Kempegowda International Airport (BLR)")).toHaveAttribute("readonly");
     expect(screen.getByRole("link", { name: /bangalore airport → whitefield/i })).toBeInTheDocument();
     expect(screen.getByText(/can i book a whitefield to airport taxi in advance/i)).toBeInTheDocument();
     const bookCtas = screen.getAllByRole("link", { name: route!.primaryCtaLabel });
     expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("/login?"));
     expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("pickup=Whitefield"));
+    expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("serviceType=airport"));
+    expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("airportJourneyType=drop"));
     expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("whitefield-to-bangalore-airport-taxi"));
   });
 
@@ -213,6 +269,10 @@ describe("route landing pages", () => {
     expect(inbound.intro).not.toBe(outbound.intro);
     expect(inbound.pickupInformation.body).not.toBe(outbound.pickupInformation.body);
     expect(screen.getByText(/arrivals are a different job/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Kempegowda International Airport (BLR)")).toHaveAttribute("readonly");
+    const bookCtas = screen.getAllByRole("link", { name: inbound.primaryCtaLabel });
+    expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("serviceType=airport"));
+    expect(bookCtas[0]).toHaveAttribute("href", expect.stringContaining("airportJourneyType=pickup"));
   });
 
   it("renders an outstation lander with round-trip context", () => {
@@ -244,7 +304,14 @@ describe("parent service pages", () => {
       </AuthProvider>,
     );
     expect(screen.getByRole("heading", { level: 1, name: airport.h1 })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /whitefield → bangalore airport/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /whitefield to bangalore airport taxi/i }),
+    ).toHaveAttribute("href", "/whitefield-to-bangalore-airport-taxi");
+    expect(screen.getByRole("heading", { level: 2, name: "East Bangalore" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "South-East Bangalore" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "South Bangalore" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Central / West" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "North Bangalore" })).toBeInTheDocument();
     unmount();
     render(
       <AuthProvider>
@@ -280,6 +347,17 @@ describe("route metadata and sitemap", () => {
       indexable: !legalPagesArePlaceholders,
     });
     expect(legal.robots).toEqual({ index: false, follow: false });
+  });
+
+  it("self-canonicalizes every published route without cab or alias alternatives", () => {
+    for (const route of getIndexableRoutes()) {
+      const metadata = createPageMetadata({
+        title: route.seoTitle,
+        description: route.metaDescription,
+        path: `/${route.slug}`,
+      });
+      expect(metadata.alternates?.canonical).toBe(`/${route.slug}`);
+    }
   });
 
   it("includes indexable routes and services and excludes drafts, fixtures, and legal placeholders", () => {

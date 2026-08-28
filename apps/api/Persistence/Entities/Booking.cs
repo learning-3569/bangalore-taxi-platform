@@ -20,6 +20,8 @@ public sealed class Booking : IHasTimestamps
     public required string PickupTimeZone { get; set; }
     public DateOnly PickupLocalDate { get; set; }
     public DateTimeOffset? EstimatedEndAt { get; set; }
+    public DateTimeOffset? ReturnAt { get; set; }
+    public DateOnly? ReturnLocalDate { get; set; }
     public decimal? EstimatedDistanceKm { get; set; }
     public decimal? EstimatedFareAmount { get; set; }
     public string? CurrencyCode { get; set; }
@@ -36,6 +38,7 @@ public sealed class Booking : IHasTimestamps
     public NpgsqlRange<DateTime>? AssignmentWindow { get; set; }
     public short StatusId { get; set; }
     public string? CustomerNotes { get; set; }
+    public string? IdempotencyKey { get; set; }
     public Guid? PricingPlanId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

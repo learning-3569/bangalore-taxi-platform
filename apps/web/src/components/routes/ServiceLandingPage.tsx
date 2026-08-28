@@ -13,6 +13,13 @@ import type { ServicePageContent } from "@/content/seo/types";
 
 export function ServiceLandingPage({ service }: { service: ServicePageContent }) {
   const routes = getRoutesByType(service.routeType).filter((route) => route.indexable);
+  const airportGroups = [
+    { label: "East Bangalore", ids: ["whitefield", "itpl", "hoodi", "kadugodi", "kr-puram", "mahadevapura", "marathahalli"] },
+    { label: "South-East Bangalore", ids: ["bellandur", "sarjapur-road", "haralur", "kasavanahalli", "outer-ring-road", "hsr-layout", "electronic-city", "singasandra", "bommanahalli"] },
+    { label: "South Bangalore", ids: ["koramangala", "btm-layout", "jp-nagar", "jayanagar", "banashankari"] },
+    { label: "Central / West", ids: ["indiranagar", "mg-road", "rajajinagar", "malleshwaram", "yeshwanthpur", "sunkadakatte"] },
+    { label: "North Bangalore", ids: ["hebbal", "yelahanka", "manyata-tech-park"] },
+  ].map((group) => ({ ...group, routes: routes.filter((route) => route.direction === "to-airport" && group.ids.includes(route.originId)) }));
   const path = `/${service.slug}`;
   const crumbs = [
     { label: "Home", href: "/" },
@@ -65,7 +72,8 @@ export function ServiceLandingPage({ service }: { service: ServicePageContent })
                 authedHref="#book"
                 intent={{
                   next: path,
-                  tripType: service.routeType === "airport" ? "airport" : "one-way",
+                  serviceType: service.routeType === "airport" ? "airport" : "outstation",
+                  airportJourneyType: service.routeType === "airport" ? "drop" : undefined,
                 }}
                 variant="taxi"
                 className="uppercase"
@@ -83,7 +91,8 @@ export function ServiceLandingPage({ service }: { service: ServicePageContent })
           <Container>
             <BookingWidget
               idPrefix={`${service.slug}-`}
-              defaultTripType={service.routeType === "airport" ? "airport" : "one-way"}
+              defaultServiceType={service.routeType === "airport" ? "airport" : "outstation"}
+              defaultAirportJourneyType={service.routeType === "airport" ? "drop" : undefined}
               heading={service.routeType === "airport" ? "Book an airport taxi" : "Book an outstation taxi"}
               submitLabel="Request this trip"
             />
@@ -108,7 +117,26 @@ export function ServiceLandingPage({ service }: { service: ServicePageContent })
           </Container>
         </section>
 
-        {routes.length > 0 ? (
+        {service.routeType === "airport" ? (
+          <section className="py-14 sm:py-20">
+            <Container>
+              <SectionHeading eyebrow="Airport routes by area" title="Plan a BLR drop from your part of Bangalore" />
+              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ink-muted">Choose a curated locality route for pickup guidance that fits that area. These links lead to one canonical page per route, not keyword variations.</p>
+              <div className="mt-8 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+                {airportGroups.map((group) => (
+                  <section key={group.label} aria-labelledby={`airport-group-${group.label.replaceAll(" ", "-")}`}>
+                    <h2 id={`airport-group-${group.label.replaceAll(" ", "-")}`} className="font-display text-xl font-semibold text-navy">{group.label}</h2>
+                    <ul className="mt-3 grid gap-2">
+                      {group.routes.map((item, index) => (
+                        <li key={item.slug}><Link href={`/${item.slug}`} className="block rounded-sm border border-line bg-paper px-4 py-3 text-sm font-medium text-navy hover:border-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">{index % 3 === 0 ? `${getRouteOrigin(item).name} to Bangalore Airport taxi` : index % 3 === 1 ? `${getRouteOrigin(item).name} airport taxi` : `${getRouteOrigin(item).name} to Bangalore Airport cab`}</Link></li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </Container>
+          </section>
+        ) : routes.length > 0 ? (
           <section className="py-14 sm:py-20">
             <Container>
               <SectionHeading eyebrow="Published corridors" title="Route pages with their own copy" />

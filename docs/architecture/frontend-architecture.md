@@ -49,7 +49,7 @@ src/app/
   book/               # booking wizard
 ```
 
-Customer authentication and booking APIs remain out of scope until explicitly requested. The homepage booking widget does not submit to the API.
+Phase 5 provides OTP login through HttpOnly refresh cookies in the Next.js BFF. Phase 6 makes the booking widget persist through the authenticated booking API, preserves every meaningful form field through OTP, and adds noindex `/account/bookings` list/detail pages. A success message is rendered only from a successful persisted response.
 
 ## Admin portal (`apps/admin`)
 

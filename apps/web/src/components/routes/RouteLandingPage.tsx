@@ -12,6 +12,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { fleet } from "@/config/site";
 import { getRelatedRoutes, getRouteDestination, getRouteOrigin, getServicePage } from "@/content/seo/catalog";
 import type { RoutePageContent } from "@/content/seo/types";
+import { airportJourneyType } from "@/lib/airport-booking";
 
 export function RouteLandingPage({ route }: { route: RoutePageContent }) {
   const related = getRelatedRoutes(route);
@@ -74,7 +75,8 @@ export function RouteLandingPage({ route }: { route: RoutePageContent }) {
                   next: path,
                   pickup: origin.name,
                   drop: destination.name,
-                  tripType: route.routeType === "airport" ? "airport" : "one-way",
+                  serviceType: route.routeType === "airport" ? "airport" : "outstation",
+                  airportJourneyType: route.routeType === "airport" ? airportJourneyType(route.direction) : undefined,
                 }}
                 variant="taxi"
                 className="uppercase"
@@ -116,7 +118,8 @@ export function RouteLandingPage({ route }: { route: RoutePageContent }) {
               idPrefix={`${route.slug}-`}
               defaultPickup={origin.name}
               defaultDrop={destination.name}
-              defaultTripType={route.defaultTripType}
+              defaultServiceType={route.routeType === "airport" ? "airport" : "outstation"}
+              defaultAirportJourneyType={route.routeType === "airport" ? airportJourneyType(route.direction) : undefined}
               heading={route.bookingHeading}
               submitLabel={route.bookingSubmitLabel}
             />
@@ -250,7 +253,8 @@ export function RouteLandingPage({ route }: { route: RoutePageContent }) {
                 next: path,
                 pickup: origin.name,
                 drop: destination.name,
-                tripType: route.routeType === "airport" ? "airport" : "one-way",
+                serviceType: route.routeType === "airport" ? "airport" : "outstation",
+                airportJourneyType: route.routeType === "airport" ? airportJourneyType(route.direction) : undefined,
               }}
               variant="taxi"
               className="uppercase"
@@ -267,7 +271,8 @@ export function RouteLandingPage({ route }: { route: RoutePageContent }) {
           next: path,
           pickup: origin.name,
           drop: destination.name,
-          tripType: route.routeType === "airport" ? "airport" : "one-way",
+          serviceType: route.routeType === "airport" ? "airport" : "outstation",
+          airportJourneyType: route.routeType === "airport" ? airportJourneyType(route.direction) : undefined,
         }}
       />
     </>

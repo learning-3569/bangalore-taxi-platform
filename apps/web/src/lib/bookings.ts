@@ -1,7 +1,8 @@
 export type BookingHistory = { status: string; statusLabel: string; createdAt: string; reason?: string | null };
 export type Booking = {
   id: string; bookingNumber: string; pickup: string; drop: string; pickupAt: string; pickupTimezone: string;
-  pickupLocalDate: string; tripType: string; vehicleType: string; vehicleTypeName: string; status: string;
+  pickupLocalDate: string; serviceType: string; airportJourneyType?: string | null; returnAt?: string | null;
+  returnLocalDate?: string | null; vehicleType: string; vehicleTypeName: string; status: string;
   statusLabel: string; customerNotes?: string | null; createdAt: string; canCancel: boolean; history: BookingHistory[];
 };
 

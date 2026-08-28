@@ -32,6 +32,9 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
                 "ck_booking_fare_currency",
                 "estimated_fare_amount IS NULL OR currency_code IS NOT NULL");
             table.HasCheckConstraint(
+                "ck_booking_return_complete",
+                "(return_at IS NULL AND return_local_date IS NULL) OR (return_at IS NOT NULL AND return_local_date IS NOT NULL AND return_at > pickup_at)");
+            table.HasCheckConstraint(
                 "ck_booking_assignment_complete",
                 "assigned_vehicle_id IS NULL OR (" +
                 "assigned_driver_id IS NOT NULL AND estimated_end_at IS NOT NULL AND assignment_window IS NOT NULL " +
@@ -67,8 +70,12 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         builder.Property(x => x.AssignedVehicleTypeName).HasMaxLength(64);
         builder.Property(x => x.AssignmentWindow).HasColumnType("tstzrange");
         builder.Property(x => x.CustomerNotes).HasMaxLength(1000);
+        builder.Property(x => x.IdempotencyKey).HasMaxLength(64);
 
         builder.HasIndex(x => x.BookingNumber).IsUnique();
+        builder.HasIndex(x => new { x.CustomerId, x.IdempotencyKey })
+            .IsUnique()
+            .HasFilter("customer_id IS NOT NULL AND idempotency_key IS NOT NULL");
         builder.HasIndex(x => new { x.ContactMobileE164, x.PickupAt }).IsDescending(false, true);
         builder.HasIndex(x => new { x.CustomerId, x.PickupAt })
             .IsDescending(false, true)

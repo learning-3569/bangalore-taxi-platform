@@ -1,6 +1,6 @@
 # API design
 
-Phase 2 implements the HTTP kernel and health endpoints. Business resources are not implemented.
+Phase 6 adds authenticated customer booking resources to the Phase 2 HTTP kernel.
 
 ## Style
 
@@ -67,7 +67,7 @@ GET /api/health
 {
   "status": "ok",
   "service": "BangaloreTaxi.Api",
-  "phase": "5",
+  "phase": "6",
   "utcNow": "2026-08-22T09:00:00+00:00"
 }
 ```
@@ -90,17 +90,18 @@ OTP verify body: `{ "phoneNumber": "9876543210", "otp": "123456" }`. Response in
 
 See [identity-architecture.md](../architecture/identity-architecture.md).
 
-## Future endpoints (not implemented)
+## Booking endpoints (Phase 6)
 
 ```text
 GET    /api/v1/bookings
 POST   /api/v1/bookings
 GET    /api/v1/bookings/{id}
-POST   /api/v1/bookings/{id}/accept
-POST   /api/v1/bookings/{id}/reject
-POST   /api/v1/bookings/{id}/assign-driver
 POST   /api/v1/bookings/{id}/cancel
+```
 
+Future admin-only endpoints (not implemented): accept, reject, and assign-driver.
+
+```text
 GET    /api/v1/drivers
 GET    /api/v1/vehicles
 GET    /api/v1/pricing
@@ -108,13 +109,13 @@ GET    /api/v1/pricing
 
 There are no `/api/payments` routes in V1.
 
-## Authorization (future)
+## Authorization
 
 | Area | Access |
 | --- | --- |
 | Health | Anonymous |
 | Booking create | Authenticated customer (Phase 6+). Guest booking is not in V1. |
-| Booking read | Owner or admin |
+| Booking read/cancel | Authenticated owner only in Phase 6 |
 | Accept/reject/assign | Admin |
 | Pricing quote | Public or authenticated; calculation always server-side |
 | Pricing rule admin | Admin |
@@ -127,8 +128,8 @@ Every write endpoint validates DTOs (`[ApiController]` + DataAnnotations). Fail 
 
 ## Idempotency
 
-Assignment and accept should be safe to retry: never duplicate side effects; return current state or 409.
+Booking creation requires a 16–64 character `Idempotency-Key`. It is unique per authenticated customer; replay returns the original persisted booking without allocating another number. Future assignment and accept operations must also be safe to retry.
 
 ## Rate limiting
 
-Global per-IP window. `[EnableRateLimiting("auth")]` is applied to `/api/v1/auth/*`. `[EnableRateLimiting("public-write")]` remains for a future booking create.
+Global per-IP window. `[EnableRateLimiting("auth")]` is applied to `/api/v1/auth/*`. `[EnableRateLimiting("public-write")]` is applied to booking creation and cancellation.

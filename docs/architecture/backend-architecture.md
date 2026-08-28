@@ -4,7 +4,7 @@
 
 `apps/api` is an ASP.NET Core 8 Web API (`BangaloreTaxi.Api`). It is a modular monolith: one process, one PostgreSQL database, one deployable API. See [ADR-001](../decisions/ADR-001-modular-monolith.md).
 
-Phase 2 provides the HTTP kernel. Business modules are not implemented yet. There is no Payment module in V1 ([ADR-004](../decisions/ADR-004-no-payment-v1.md)).
+Phase 2 provides the HTTP kernel; Phase 5 adds phone/OTP identity and Phase 6 adds authenticated customer bookings. There is no Payment module in V1 ([ADR-004](../decisions/ADR-004-no-payment-v1.md)).
 
 OpenAPI/Swagger is enabled in Development at `/swagger`.
 
@@ -24,7 +24,7 @@ apps/api/
   Persistence/               EF Core, PostgreSQL, migrations (infrastructure)
 ```
 
-Future capability folders (`Bookings/`, `Customers/`, …) are added **when that phase is implemented**, not as empty shells.
+Capability folders (`Bookings/`, `Auth/`) are added only when implemented, not as empty shells.
 
 ```text
 Bookings/
@@ -45,9 +45,9 @@ Controllers stay thin. Do not put business rules in `Program.cs` or controllers.
 
 Domain concepts must not take a dependency on HTTP or vendor SDKs. Persistence entities currently sit in `Persistence/Entities` because they are EF-mapped. If a later phase needs persistence-free domain types, extract them then.
 
-## Future modules
+## Modules
 
-Identity, Customers (OTP in Phase 5), Bookings, Drivers, Vehicles, Pricing, Notifications, SEO, Administration.
+Identity/Customers (OTP in Phase 5) and customer Bookings (Phase 6) are implemented. Drivers, Vehicles, Pricing, Notifications, SEO administration, and Administration remain future operational modules.
 
 Payment is a future phase only.
 
@@ -78,7 +78,7 @@ The API does **not** run migrations on startup. Apply schema with `dotnet ef dat
 
 `ConnectionStrings:DefaultConnection` is required in Staging/Production. Development and Testing may fall back to the documented local Docker credentials.
 
-`TimeProvider` is registered as a singleton (`TimeProvider.System`). System timestamps are UTC. Booking local time stays on `pickup_at` / `pickup_time_zone` (Phase 1).
+`TimeProvider` is registered as a singleton (`TimeProvider.System`). System timestamps are UTC. Phase 6 interprets submitted local pickup values in IANA `Asia/Kolkata`, persisting the UTC instant in `pickup_at`, the zone in `pickup_timezone`, and the local calendar date in `pickup_local_date`.
 
 `IHttpClientFactory` is registered. Named clients for Maps, WhatsApp, SMS, email, and payment are added when those phases exist. Do not register fake providers.
 
@@ -115,7 +115,7 @@ Success bodies remain the resource JSON (no wrapper). HTTP status codes carry th
 
 ## Transactions and concurrency
 
-No global per-request transaction. Future booking/assignment services open an explicit EF transaction for the write set, use `SELECT … FOR UPDATE` as designed in Phase 1, and map exclusion/unique failures to 409. The UI is not the concurrency guard.
+No global per-request transaction. Booking creation uses an explicit transaction and an atomic PostgreSQL upsert of `booking_number_sequence`; the booking and initial history commit together. Cancellation uses PostgreSQL `xmin` optimistic concurrency and appends history in the same save. The UI is not the concurrency guard.
 
 ## Logging
 

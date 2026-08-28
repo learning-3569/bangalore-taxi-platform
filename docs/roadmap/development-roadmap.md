@@ -2,9 +2,9 @@
 
 The product is built one phase at a time in this repository. When a phase is requested, implement only that phase. Do not start the next phase automatically.
 
-**Current phase: Phase 5 — Phone number + OTP authentication (complete)**
+**Current phase: Phase 6 — Authenticated Booking Engine (complete)**
 
-The numbered roadmap below still lists an earlier “Phase 3 — Customer Authentication” heading from the original plan. That work is implemented as **Phase 5**. Do not start booking APIs, admin operations, or payment automatically.
+The authoritative sequence is **Phase 5 = Phone number + OTP authentication** and **Phase 6 = Authenticated Booking Engine**. Older headings below are retained only as historical planning context and are superseded where their numbering conflicts. Do not start pricing, admin operations, assignment, or payment automatically.
 
 Payment is a future phase outside V1.
 
@@ -162,6 +162,18 @@ The original “Phase 3 — Customer Authentication” section below is **not** 
 
 ---
 
+## Phase 6 — Authenticated Booking Engine (implemented)
+
+**Objective:** Authenticated customers create booking requests, receive concurrency-safe `BLR-{year}-{sequence}` numbers, list/read only their own requests, and cancel only safe statuses.
+
+**Scope:** Customer booking API and BFF, Bangalore local-time conversion, pending status/history, per-customer idempotency, `/account/bookings` list/details, and customer cancellation. The nullable database `customer_id` remains for historical/future flexibility, while the V1 public API requires authenticated ownership.
+
+**Cancellation:** `pending`, `accepted`, and `confirmed` may be cancelled. `driver_assigned` is conservatively excluded because assignment represents an operational commitment; all terminal/in-progress states are also excluded.
+
+**Out of scope:** Guest booking, pricing/fare calculation, payment, admin booking operations, maps, and driver/vehicle assignment.
+
+---
+
 ## Phase 4 — SEO-First Public Website
 
 **Objective:** Real marketing pages with metadata, internal linking, sitemap expansion, mobile-first content for core Bangalore intents.
@@ -184,7 +196,7 @@ The original “Phase 3 — Customer Authentication” section below is **not** 
 
 ---
 
-## Phase 5 — Booking Engine
+## Historical Phase 5 — Booking Engine (superseded by Phase 6 above)
 
 **Objective:** Customers submit booking requests; bookings persist with statuses; customers can list upcoming/history and cancel per rules.
 
@@ -206,7 +218,7 @@ The original “Phase 3 — Customer Authentication” section below is **not** 
 
 ---
 
-## Phase 6 — Pricing Engine
+## Historical Phase 6 — Pricing Engine (not current; future phase number to be reassigned)
 
 **Objective:** Server-side fare estimates from configurable rules.
 

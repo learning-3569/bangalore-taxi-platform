@@ -30,12 +30,21 @@ describe("booking intent helpers", () => {
     const href = loginHref({
       next: "/whitefield-to-bangalore-airport-taxi",
       pickup: "Whitefield",
-      drop: "Bangalore Airport",
-      tripType: "airport",
+      drop: "Kempegowda International Airport (BLR)",
+      serviceType: "airport",
+      airportJourneyType: "drop",
+      travelDate: "2026-09-10",
+      pickupTime: "10:30",
+      vehicleType: "suv",
     });
     expect(href).toContain("/login?");
     expect(href).toContain("next=%2Fwhitefield-to-bangalore-airport-taxi");
     expect(href).toContain("pickup=Whitefield");
+    expect(href).toContain("serviceType=airport");
+    expect(href).toContain("airportJourneyType=drop");
+    expect(href).toContain("travelDate=2026-09-10");
+    expect(href).toContain("pickupTime=10%3A30");
+    expect(href).toContain("vehicleType=suv");
     expect(continueHref({ next: "/whitefield-to-bangalore-airport-taxi" })).toBe(
       "/whitefield-to-bangalore-airport-taxi#book",
     );
